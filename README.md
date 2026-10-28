@@ -9,7 +9,7 @@ A bot that compares Kalshi's football prices with what the sharpest sportsbooks 
 1. **Every 6 hours (scan):** pulls the open Kalshi game markets for your leagues, pulls Pinnacle's odds (plus other sharp books as a cross-check) from The Odds API, removes the sportsbook's cut to get each team's fair chance, and matches each Kalshi game to the sportsbook game by team names and kickoff time. If anything is unclear (names don't match, prices are stale, books disagree) it skips the game.
 2. **Decides:** if Kalshi's asking price is cheap enough that the expected profit is at least 3% after Kalshi's fee, it buys. Otherwise it may post a cheaper waiting order that only fills if someone sells to it at that price. Bet size is a quarter of the "Kelly" amount, capped hard.
 3. **Every 30 minutes (check-in):** fills or cancels waiting orders, records Kalshi's price right before kickoff (to measure "beat the close"), settles finished games, and pauses everything if the bankroll hits the stop level.
-4. **Mondays:** emails you a weekly report (once email is set up).
+4. **Mondays:** emails you a weekly report (once email is set up). It also emails you each time a bankroll passes another $1,000, and keeps going.
 
 Every market it looks at, and why it bet or passed, is saved, so you can see its reasoning.
 
@@ -19,7 +19,8 @@ These are in the code (`supabase/functions/edgebot/lib/rules.ts`). Settings in t
 
 | Rule | Limit |
 |---|---|
-| Biggest single bet | 5% of the bankroll, and never more than $20 |
+| Biggest single bet | 5% of the bankroll, and never more than $300 |
+| Winnings | No ceiling. It keeps going and emails you each time the bankroll passes another $1,000 |
 | Money riding at once | 30% of the bankroll (hard cap 40%) |
 | Bets per day | 5 (hard cap 10), one per game |
 | Minimum expected profit | 3% after fees (hard floor 2%) |

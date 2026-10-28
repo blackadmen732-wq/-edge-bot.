@@ -316,6 +316,19 @@ Deno.test({ name: "paper kill switch + weekly report email", ...opts, fn: async 
   assert(emails.some((e) => String(e.subject).startsWith("Edge Bot:")));
 } });
 
+Deno.test({ name: "no ceiling: passing $1,000 sends one milestone email and keeps going", ...opts, fn: async () => {
+  await db`update edgebot.settings set mode = 'paper', paused_reason = null`;
+  await db`insert into edgebot.bets (mode, status, ticker, event_ticker, contracts, cost, fee, fill_price, payout, pnl, settled_at)
+           values ('paper', 'won', 'BIGWIN', 'BIGWIN-E', 2000, 500, 0, 0.25, 2000, 1500, now())`;
+  const before = emails.length;
+  await call("tick", { cron: true });
+  const passed = () => emails.slice(before).filter((e) => String(e.subject).includes("passed $1,000"));
+  assertEquals(passed().length, 1, JSON.stringify(emails.slice(before).map((e) => e.subject)));
+  assertEquals((await call("dashboard")).body.mode, "paper", "no ceiling: still running");
+  await call("tick", { cron: true });
+  assertEquals(passed().length, 1, "only one email per level");
+} });
+
 Deno.test({ name: "discover lists series (token only)", ...opts, fn: async () => {
   assertEquals((await call("discover")).status, 401);
   const r = await call("discover", { token: true });

@@ -100,6 +100,14 @@ test("sizing never breaks the caps", () => {
   assert.equal(noEdge.contracts, 0);
 });
 
+test("per-bet dollar cap is $300 and only binds on a big bankroll", () => {
+  assert.equal(HARD.MAX_STAKE_USD, 300);
+  const base = { p: 0.7, price: 0.5, cashAvailable: 1e9, openExposure: 0, kellyFraction: 1, maxStakePct: 0.05, maxStakeUsd: HARD.MAX_STAKE_USD, maxOpenExposurePct: 0.3 };
+  assert.equal(sizeBet({ ...base, bankroll: 20 }).stake, 1, "$20 bankroll: 5% = $1");
+  assert.equal(sizeBet({ ...base, bankroll: 2000 }).stake, 100, "$2,000 bankroll: 5% = $100");
+  assert.equal(sizeBet({ ...base, bankroll: 100000 }).stake, 300, "$100,000 bankroll: capped at $300");
+});
+
 test("settings cannot loosen hard caps", () => {
   const loose = effectiveSettings({ ...baseSettings, max_stake_pct: 0.5, min_edge: 0, max_bets_per_day: 999, stop_balance: 0, max_prob: 0.99, min_prob: 0.01, kelly_fraction: 3 });
   assert.equal(loose.max_stake_pct, HARD.MAX_STAKE_PCT);

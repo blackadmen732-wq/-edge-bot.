@@ -25,7 +25,7 @@ await db.exec(`
 `);
 
 let migration = readFileSync(new URL("../../../supabase/migrations/001_edgebot.sql", import.meta.url), "utf8");
-migration = migration.replace(/create extension if not exists pg_net;/, "");
+migration = migration.replace(/create extension if not exists pg_net[^;]*;/, "");
 await db.exec(migration);
 
 const server = new PGLiteSocketServer({ db, port, host: "127.0.0.1" });

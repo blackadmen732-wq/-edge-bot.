@@ -22,7 +22,7 @@
   .eb-checks li { display: flex; gap: var(--cds-gap-sm); align-items: baseline; }
   .eb-checks li::before { content: ""; flex: none; width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1.5px solid var(--color-fg-muted); transform: translateY(0.05rem); }
   .eb-checks li.eb-done::before { background: var(--color-ok); border-color: var(--color-ok); }
-  .eb-chart { position: relative; min-height: 190px; }
+  .eb-chart { position: relative; min-height: 260px; }
   .eb-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; }
   .eb-tip .eb-tip-head { color: var(--cds-text-secondary); }
   .eb-scroll { max-height: 26rem; overflow: auto; }
@@ -72,6 +72,13 @@
   </section>
   <p class="eb-note" style="margin-top: var(--cds-gap-sm)">Beating the closing price means the bot bought cheaper than Kalshi's price at kickoff. Positive over many bets is the best early sign of a real edge. Wins and losses over a few dozen bets are mostly luck.</p>
 
+  <section class="eb-section eb-card" id="curve">
+    <h2>Profit over time</h2>
+    <p class="eb-note">Running total after each finished game. Paper is fake money (a simulation); real money gets its own line once it's switched on. The dashed line is break-even.</p>
+    <p class="eb-note eb-curve-empty" hidden>The line starts once the first game the bot bet on is over.</p>
+    <div class="eb-chart dash-skeleton" data-draw="curve" data-source="curve"></div>
+  </section>
+
   <section class="eb-section eb-card" id="road">
     <h2>Road to real money</h2>
     <p class="eb-note">Each finished paper bet is a yard. Real money can only switch on at the goal line, and only if every check below is done.</p>
@@ -82,13 +89,6 @@
       <li>Your Kalshi API key added (you do this yourself, never in chat)</li>
       <li>Real-money switch turned on</li>
     </ul>
-  </section>
-
-  <section class="eb-section eb-card" id="curve">
-    <h2>Paper profit over time</h2>
-    <p class="eb-note">Running total after each finished bet. The dashed line is break-even.</p>
-    <p class="eb-note eb-curve-empty" hidden>The line starts once the first bet's game is over.</p>
-    <div class="eb-chart dash-skeleton" data-draw="curve" data-source="curve"></div>
   </section>
 
   <section class="eb-section eb-card" id="open">
@@ -145,6 +145,7 @@
         <li>Only bets when expected profit is at least <span data-draw="minEdge" data-source="summary" data-field="min_edge_pct">—</span> after fees</li>
         <li>At most <span data-draw="perDay" data-source="summary" data-field="max_bets_per_day">—</span> bets a day, one per game, no betting once a game starts</li>
         <li>Pauses itself if the bankroll falls to <span data-draw="stop" data-source="summary" data-field="stop_balance">—</span></li>
+        <li>No ceiling on winnings: it keeps going, and emails you each time the bankroll passes another <span data-draw="milestone">—</span></li>
       </ul>
       <p class="eb-note" style="margin-top: var(--cds-gap-sm)">To pause, resume, change a rule or switch to real money, ask Claude in chat. Real money stays locked until every check above is done.</p>
     </section>
@@ -173,9 +174,9 @@
     if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || 'Supabase returned an error'));
     const text = typeof a === 'string' ? a : (a && typeof a.result === 'string' ? a.result : null);
     if (text === null) throw new Error('Supabase answered without a result');
-    const open = text.indexOf('<untrusted-data');
+    const close = text.indexOf('</untrusted-data');
+    const open = close >= 0 ? text.lastIndexOf('<untrusted-data', close) : -1;
     const start = open >= 0 ? text.indexOf('>', open) + 1 : 0;
-    const close = open >= 0 ? text.indexOf('</untrusted-data', start) : -1;
     const body = text.slice(start, close >= 0 ? close : text.length).trim();
     let rows;
     try { rows = JSON.parse(body); } catch (e) { throw new Error(text.slice(0, 300)); }
@@ -188,7 +189,8 @@
 
 <script>
   // Shared helpers.
-  const MAX_STAKE_USD = 20; // hard cap built into the bot's code
+  const MAX_STAKE_USD = 300; // hard cap built into the bot's code
+  const MILESTONE_USD = 1000; // the bot emails you each time the bankroll passes another multiple of this
   const money = (x) => (x < 0 ? '−$' : '$') + Math.abs(Number(x)).toFixed(2);
   const signedMoney = (x) => (Number(x) > 0 ? '+' : '') + money(x);
   const first = (id) => {
@@ -245,6 +247,7 @@
   ebNum('stop', 'summary', 'stop_balance', money);
   ebNum('credits', 'summary', 'odds_credits_left');
   dash.draw('capUsd', (el) => { el.textContent = money(MAX_STAKE_USD); });
+  dash.draw('milestone', (el) => { el.textContent = '$' + d3.format(',')(MILESTONE_USD); });
 
   ebRows('openRows', 'open_bets', [
     { field: 'pick' }, { field: 'game' }, { field: 'kickoff_et' }, { field: 'money' }, { field: 'status' },
@@ -321,45 +324,67 @@
 </script>
 
 <script>
-  // Running paper profit, one point per finished bet, with a tooltip.
+  // Profit over time: one step line per kind of money (paper / real), with end labels and a tooltip.
   dash.draw('curve', (el) => {
     const d = dash.data('curve');
     if (d.status === 'error') { el.classList.remove('dash-skeleton'); const f = document.createElement('div'); f.className = 'eb-fail'; f.textContent = 'Failed to load'; el.replaceChildren(f); return; }
     if (d.status !== 'ok') { el.replaceChildren(); return; }
     el.classList.remove('dash-skeleton');
-    const rows = d.data.map((r) => ({ n: Number(r.bet_no), v: Number(r.total_profit) }));
-    if (!rows.length) { el.replaceChildren(); return; }
-    const pts = [{ n: 0, v: 0 }, ...rows];
-    const w = Math.max(el.clientWidth || 0, 280), h = 190;
-    const fmt = (v) => (v > 0 ? '+$' : v < 0 ? '−$' : '$') + Math.abs(v).toFixed(2);
-    const [lo, hi] = d3.extent(pts, (p) => p.v);
-    const span = Math.max(hi - lo, 0.5);
-    const y = d3.scaleLinear([Math.min(lo, 0) - span * 0.08, Math.max(hi, 0) + span * 0.08], [h - 26, 10]).nice(4);
-    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${w} ${h}`)
-      .attr('role', 'img').attr('aria-label', `Paper profit after ${rows.length} finished bets: ${fmt(rows[rows.length - 1].v)}`);
-    // Measure the widest y label so the plot starts after it.
-    const probe = svg.append('text').style('font-size', 'var(--cds-font-size-caption)');
+    if (!d.data.length) { el.replaceChildren(); return; }
+    const fmt = (v) => (v > 0 ? '+$' : v < 0 ? '−$' : '$') + d3.format(',.2f')(Math.abs(v));
+    const when = (t) => t.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const names = Array.from(new Set(d.data.map((r) => r.series)));
+    const series = names.map((name, i) => {
+      const pts = d.data.filter((r) => r.series === name).map((r) => ({ t: new Date(r.settled_at), v: Number(r.total_profit) }));
+      return { name, color: dash.colors[i % dash.colors.length], pts: [{ t: pts[0].t, v: 0, start: true }, ...pts] };
+    });
+    const all = series.flatMap((s) => s.pts);
+    let [t0, t1] = d3.extent(all, (p) => p.t);
+    if (+t0 === +t1) { t0 = new Date(+t0 - 864e5); t1 = new Date(+t1 + 864e5); }
+    const [lo, hi] = d3.extent(all, (p) => p.v);
+    const span = Math.max(hi - lo, 1);
+    const w = Math.max(el.clientWidth || 0, 300), h = 260, top = 12, bottom = 28;
+    const y = d3.scaleLinear([Math.min(lo, 0) - span * 0.08, Math.max(hi, 0) + span * 0.08], [h - bottom, top]).nice(5);
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${w} ${h}`).attr('role', 'img')
+      .attr('aria-label', 'Profit over time: ' + series.map((s) => `${s.name} ${fmt(s.pts[s.pts.length - 1].v)}`).join(', '));
     el.replaceChildren(svg.node());
-    let left = 0;
-    y.ticks(4).forEach((t) => { probe.text(fmt(t)); left = Math.max(left, probe.node().getComputedTextLength()); });
+    // Measure labels so nothing is cut off.
+    const probe = svg.append('text').style('font-size', 'var(--cds-font-size-caption)');
+    const width = (txt) => { probe.text(txt); return probe.node().getComputedTextLength(); };
+    const yt = y.ticks(5);
+    const left = Math.ceil(d3.max(yt, (t) => width(fmt(t)))) + 10;
+    const endLabels = series.map((s) => `${s.name} ${fmt(s.pts[s.pts.length - 1].v)}`);
+    let right = Math.ceil(d3.max(endLabels, width)) + 14;
+    if (w - left - right < 140) right = 12; // narrow screen: labels go above the lines' ends instead
     probe.remove();
-    left = Math.ceil(left) + 10;
-    const x = d3.scaleLinear([0, Math.max(rows[rows.length - 1].n, 1)], [left, w - 12]);
-    svg.append('g').selectAll('line').data(y.ticks(4)).join('line')
-      .attr('x1', left).attr('x2', w - 12).attr('y1', (t) => y(t)).attr('y2', (t) => y(t)).attr('stroke', 'var(--cds-chart-grid)');
-    svg.append('g').selectAll('text').data(y.ticks(4)).join('text')
+    const x = d3.scaleUtc([t0, t1], [left, w - right]);
+    svg.append('g').selectAll('line').data(yt).join('line')
+      .attr('x1', left).attr('x2', w - right).attr('y1', (t) => y(t)).attr('y2', (t) => y(t)).attr('stroke', 'var(--cds-chart-grid)');
+    svg.append('g').selectAll('text').data(yt).join('text')
       .attr('x', left - 8).attr('y', (t) => y(t)).attr('dy', '0.32em').attr('text-anchor', 'end')
       .attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(fmt);
-    svg.append('line').attr('x1', left).attr('x2', w - 12).attr('y1', y(0)).attr('y2', y(0))
+    svg.append('line').attr('x1', left).attr('x2', w - right).attr('y1', y(0)).attr('y2', y(0))
       .attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 4');
-    const xt = x.ticks(Math.min(5, rows[rows.length - 1].n)).filter((t) => Number.isInteger(t));
+    const xt = x.ticks(Math.max(2, Math.floor((w - left - right) / 90)));
     svg.append('g').selectAll('text').data(xt).join('text')
-      .attr('x', (t) => x(t)).attr('y', h - 6).attr('text-anchor', 'middle')
-      .attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text((t) => (t === 0 ? 'start' : 'bet ' + t));
-    svg.append('path').datum(pts).attr('fill', 'none').style('stroke', dash.colors[0]).attr('stroke-width', 2)
-      .attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round')
-      .attr('d', d3.line().x((p) => x(p.n)).y((p) => y(p.v)));
-    const dot = svg.append('circle').attr('r', 4).style('fill', dash.colors[0]).attr('visibility', 'hidden');
+      .attr('x', (t) => x(t)).attr('y', h - 8).attr('text-anchor', 'middle')
+      .attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(d3.utcFormat('%b %-d'));
+    const line = d3.line().x((p) => x(p.t)).y((p) => y(p.v)).curve(d3.curveStepAfter);
+    series.forEach((s) => {
+      svg.append('path').datum(s.pts).attr('fill', 'none').style('stroke', s.color).attr('stroke-width', 2)
+        .attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('d', line);
+    });
+    // End labels, nudged apart when two lines finish close together.
+    const ends = series.map((s, i) => ({ s, label: endLabels[i], y: y(s.pts[s.pts.length - 1].v), x: x(s.pts[s.pts.length - 1].t) }))
+      .sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 15) ends[i].y = ends[i - 1].y + 15;
+    ends.forEach((e) => {
+      const inside = right <= 12;
+      svg.append('text').attr('x', inside ? Math.min(e.x, w - 4) : w - right + 8).attr('y', inside ? e.y - 8 : e.y).attr('dy', '0.32em')
+        .attr('text-anchor', inside ? 'end' : 'start').style('fill', e.s.color)
+        .style('font-size', 'var(--cds-font-size-caption)').style('font-weight', 'var(--cds-font-weight-medium)').text(e.label);
+    });
+    const dot = svg.append('circle').attr('r', 4).attr('visibility', 'hidden');
     const tip = document.createElement('div');
     tip.className = 'eb-tip';
     tip.hidden = true;
@@ -367,20 +392,24 @@
     const body = document.createElement('div');
     tip.append(head, body);
     el.append(tip);
+    const real = all.filter((p) => !p.start);
     svg.on('pointermove', (event) => {
-      const [mx] = d3.pointer(event);
-      const scale = w / (el.clientWidth || w);
-      const n = Math.round(x.invert(mx));
-      const p = pts.find((q) => q.n === Math.max(0, Math.min(n, pts[pts.length - 1].n)));
-      if (!p) return;
-      dot.attr('cx', x(p.n)).attr('cy', y(p.v)).attr('visibility', 'visible');
-      head.textContent = p.n === 0 ? 'Start' : 'After bet ' + p.n;
-      body.textContent = 'Total profit ' + fmt(p.v);
+      const [mx, my] = d3.pointer(event);
+      let best = null, bestD = Infinity;
+      series.forEach((s) => s.pts.forEach((p) => {
+        if (p.start && real.length) return;
+        const dd = Math.hypot(x(p.t) - mx, (y(p.v) - my) * 0.5);
+        if (dd < bestD) { bestD = dd; best = { s, p }; }
+      }));
+      if (!best) return;
+      dot.attr('cx', x(best.p.t)).attr('cy', y(best.p.v)).style('fill', best.s.color).attr('visibility', 'visible');
+      head.textContent = when(best.p.t);
+      body.textContent = `${best.s.name}: ${fmt(best.p.v)} total`;
       tip.hidden = false;
-      const px = x(p.n) / scale, py = y(p.v) / scale;
-      const tw = tip.offsetWidth, cw = el.clientWidth;
-      tip.style.left = Math.max(0, Math.min(px + 10, cw - tw)) + 'px';
-      tip.style.top = Math.max(0, py - 40) + 'px';
+      const scale = w / (el.clientWidth || w);
+      const px = x(best.p.t) / scale, py = y(best.p.v) / scale;
+      tip.style.left = Math.max(0, Math.min(px + 10, el.clientWidth - tip.offsetWidth)) + 'px';
+      tip.style.top = Math.max(0, py - 44) + 'px';
     });
     svg.on('pointerleave', () => { tip.hidden = true; dot.attr('visibility', 'hidden'); });
   });

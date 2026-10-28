@@ -164,6 +164,25 @@ async function pause(reason: string) {
   await sendEmail(`Edge Bot paused: ${reason}`, `<p>The bot paused itself.</p><p><b>Reason:</b> ${escapeHtml(reason)}</p><p>Nothing else will be bet until you resume it from the dashboard.</p>`);
 }
 
+/** No ceiling on winnings: the bot keeps going, and emails once each time a new $1,000 level is passed. */
+async function milestone(mode: Mode, equity: number): Promise<string | null> {
+  const step = HARD.MILESTONE_STEP_USD;
+  const level = Math.floor(equity / step) * step;
+  if (level < step) return null;
+  const key = `milestone:${mode}`;
+  const prev = await stateGet<{ level: number }>(key);
+  if (prev && Number(prev.value.level) >= level) return null;
+  await stateSet(key, { level, equity, at: new Date().toISOString() });
+  const label = mode === "paper" ? "Paper (fake money)" : "Real money";
+  const pretty = `$${level.toLocaleString("en-US")}`;
+  await sendEmail(
+    `Edge Bot: ${label} bankroll passed ${pretty}`,
+    `<p>${label} bankroll is now $${equity.toFixed(2)}.</p><p>There's no ceiling, so the bot keeps going under the same rules (at most ${HARD.MAX_STAKE_PCT * 100}% of the bankroll and $${HARD.MAX_STAKE_USD} per bet).</p>` +
+      (mode === "live" ? `<p>Money left on Kalshi is still at risk. Withdrawing some winnings to your bank locks them in.</p>` : ""),
+  );
+  return `${mode} bankroll passed ${pretty}`;
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
@@ -518,25 +537,33 @@ async function tick() {
     }
   }
 
-  // 4) Kill switches.
+  // 4) Kill switches (losses) and milestones (wins: no ceiling, just an email at each new $1,000 level).
   if (s.mode !== "paused") {
     const paper = await paperBankroll(s.paper_start_bankroll);
     if (paper.equity <= s.stop_balance) {
       await pause(`paper bankroll fell to $${paper.equity.toFixed(2)} (stop level $${s.stop_balance})`);
       out.notes.push("paused: paper stop level");
-    } else if (s.mode === "live") {
-      try {
-        const t = await trader();
-        if (t) {
-          const bal = await t.balance();
-          const ex = await liveExposure();
-          if (bal + ex.riding + ex.reserved <= s.stop_balance) {
-            await pause(`real-money balance fell to $${(bal + ex.riding + ex.reserved).toFixed(2)} (stop level $${s.stop_balance})`);
-            out.notes.push("paused: live stop level");
+    } else {
+      const m = await milestone("paper", paper.equity);
+      if (m) out.notes.push(m);
+      if (s.mode === "live") {
+        try {
+          const t = await trader();
+          if (t) {
+            const bal = await t.balance();
+            const ex = await liveExposure();
+            const liveEquity = bal + ex.riding + ex.reserved;
+            if (liveEquity <= s.stop_balance) {
+              await pause(`real-money balance fell to $${liveEquity.toFixed(2)} (stop level $${s.stop_balance})`);
+              out.notes.push("paused: live stop level");
+            } else {
+              const lm = await milestone("live", liveEquity);
+              if (lm) out.notes.push(lm);
+            }
           }
+        } catch (e) {
+          out.notes.push(`live balance check failed: ${(e as Error).message.slice(0, 120)}`);
         }
-      } catch (e) {
-        out.notes.push(`live balance check failed: ${(e as Error).message.slice(0, 120)}`);
       }
     }
   }

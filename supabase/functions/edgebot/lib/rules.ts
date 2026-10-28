@@ -1,8 +1,10 @@
 // Hard rules baked into the code. Database settings can make these stricter, never looser.
 
 export const HARD = {
-  /** Never stake more than this on one bet, whatever the bankroll. */
-  MAX_STAKE_USD: 20,
+  /** Never stake more than this on one bet, whatever the bankroll. (There is no ceiling on winnings.) */
+  MAX_STAKE_USD: 300,
+  /** Email the owner each time the bankroll passes another multiple of this. The bot keeps going. */
+  MILESTONE_STEP_USD: 1000,
   /** Never stake more than this share of the bankroll on one bet. */
   MAX_STAKE_PCT: 0.05,
   /** Never have more than this share of the bankroll riding at once. */
