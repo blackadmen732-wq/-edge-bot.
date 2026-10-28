@@ -13,6 +13,7 @@ import type { Settings } from "../supabase/functions/edgebot/lib/rules.ts";
 import { matchGame, nameScore, normalize, isTieLabel } from "../supabase/functions/edgebot/lib/match.ts";
 import { fairLine } from "../supabase/functions/edgebot/lib/odds.ts";
 import { importKalshiKey, signRequest } from "../supabase/functions/edgebot/lib/kalshi.ts";
+import { aiFromEnv, explain } from "../supabase/functions/edgebot/lib/ai.ts";
 
 const near = (a: number, b: number, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -230,6 +231,43 @@ test("fairLine skips stale or disagreeing prices", () => {
 test("fairLine falls back to two agreeing sharp books", () => {
   const f = fairLine(ev({ lowvig: [1.6, 2.5, fresh], betonlineag: [1.62, 2.45, fresh] }), false, now)!;
   assert.equal(f.source, "sharp_consensus");
+});
+
+// ---------------- optional AI writer
+
+test("AI: off without keys, Claude by default, Grok when chosen", () => {
+  const env = (m: Record<string, string>) => (k: string) => m[k];
+  assert.equal(aiFromEnv(env({})), null);
+  assert.deepEqual(aiFromEnv(env({ ANTHROPIC_API_KEY: "a" })), { provider: "anthropic", key: "a", model: "claude-haiku-5-5" });
+  assert.deepEqual(aiFromEnv(env({ XAI_API_KEY: "x" })), { provider: "xai", key: "x", model: "grok-4.3" });
+  assert.equal(aiFromEnv(env({ ANTHROPIC_API_KEY: "a", XAI_API_KEY: "x" }))!.provider, "anthropic");
+  assert.equal(aiFromEnv(env({ ANTHROPIC_API_KEY: "a", XAI_API_KEY: "x", AI_PROVIDER: "grok" }))!.provider, "xai");
+  assert.equal(aiFromEnv(env({ XAI_API_KEY: "x", AI_MODEL: "grok-4.7" }))!.model, "grok-4.7");
+});
+
+test("AI: calls Claude and Grok with the right request shape", async () => {
+  const calls: any[] = [];
+  const fakeFetch = (async (url: string, init: any) => {
+    calls.push({ url, init, body: JSON.parse(init.body) });
+    if (url.includes("anthropic")) return new Response(JSON.stringify({ content: [{ type: "text", text: "Claude says hi." }] }), { status: 200 });
+    return new Response(JSON.stringify({ choices: [{ message: { content: "Grok says hi." } }] }), { status: 200 });
+  }) as unknown as typeof fetch;
+  assert.equal(await explain({ provider: "anthropic", key: "k1", model: "claude-haiku-5-5" }, "sys", { a: 1 }, fakeFetch), "Claude says hi.");
+  assert.equal(calls[0].url, "https://api.anthropic.com/v1/messages");
+  assert.equal(calls[0].init.headers["x-api-key"], "k1");
+  assert.equal(calls[0].body.system, "sys");
+  assert.ok(calls[0].body.max_tokens <= 500);
+  assert.equal(await explain({ provider: "xai", key: "k2", model: "grok-4.3" }, "sys", { a: 1 }, fakeFetch), "Grok says hi.");
+  assert.equal(calls[1].url, "https://api.x.ai/v1/chat/completions");
+  assert.equal(calls[1].init.headers.authorization, "Bearer k2");
+  assert.equal(calls[1].body.messages[0].role, "system");
+});
+
+test("AI: errors and empty answers throw so the report falls back", async () => {
+  const bad = (async () => new Response("nope", { status: 401 })) as unknown as typeof fetch;
+  await assert.rejects(explain({ provider: "anthropic", key: "k", model: "m" }, "s", {}, bad), /401/);
+  const empty = (async () => new Response(JSON.stringify({ content: [] }), { status: 200 })) as unknown as typeof fetch;
+  await assert.rejects(explain({ provider: "anthropic", key: "k", model: "m" }, "s", {}, empty), /no text/);
 });
 
 // ---------------- Kalshi request signing

@@ -50,6 +50,8 @@ function bk(key: string, prices: Record<string, number>) {
 
 let oddsCalls = 0;
 const emails: any[] = [];
+const aiCalls: any[] = [];
+let aiFail = false;
 const liveOrders: Record<string, any> = {};
 let liveBalance = 20;
 let lastSignatureHeaders: Record<string, string> | null = null;
@@ -108,6 +110,11 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
   if (url.hostname === "api.resend.com") {
     emails.push(JSON.parse(String(init?.body)));
     return ok({ id: "email-1" });
+  }
+  if (url.hostname === "api.anthropic.com") {
+    aiCalls.push(JSON.parse(String(init?.body)));
+    if (aiFail) return new Response("overloaded", { status: 529 });
+    return ok({ content: [{ type: "text", text: "This is a simulation summary <b>with tags</b>.\nSecond paragraph." }] });
   }
   return realFetch(input as any, init);
 }) as typeof fetch;
@@ -313,7 +320,30 @@ Deno.test({ name: "paper kill switch + weekly report email", ...opts, fn: async 
   assertEquals((await call("dashboard")).body.mode, "paused");
   const r = await call("report", { cron: true });
   assertEquals(r.body.result.email, "sent");
+  assert(String(r.body.result.ai).startsWith("off"), "AI is off without a key");
   assert(emails.some((e) => String(e.subject).startsWith("Edge Bot:")));
+} });
+
+Deno.test({ name: "AI summary: added to the weekly email when a key is set, escaped, and skipped if the AI fails", ...opts, fn: async () => {
+  Deno.env.set("ANTHROPIC_API_KEY", "sk-test");
+  const before = emails.length;
+  const r = await call("report", { cron: true });
+  assertEquals(r.body.result.ai, "ok (anthropic claude-haiku-5-5)");
+  const sent = emails[emails.length - 1];
+  assert(emails.length === before + 1);
+  assert(String(sent.html).includes("This is a simulation summary &lt;b&gt;with tags&lt;/b&gt;."), "AI text is escaped");
+  assert(String(sent.html).includes("Second paragraph."));
+  const req = aiCalls[aiCalls.length - 1];
+  assertEquals(req.model, "claude-haiku-5-5");
+  const facts = JSON.parse(String(req.messages[0].content).split("\n\n").slice(1).join("\n\n"));
+  assert("paper_simulation" in facts && "real_money" in facts, "paper and real money kept separate");
+  aiFail = true;
+  const r2 = await call("report", { cron: true });
+  assertEquals(r2.body.result.email, "sent", "report still goes out");
+  assert(String(r2.body.result.ai).startsWith("failed"));
+  assert(!String(emails[emails.length - 1].html).includes("Written by AI"));
+  aiFail = false;
+  Deno.env.delete("ANTHROPIC_API_KEY");
 } });
 
 Deno.test({ name: "no ceiling: passing $1,000 sends one milestone email and keeps going", ...opts, fn: async () => {

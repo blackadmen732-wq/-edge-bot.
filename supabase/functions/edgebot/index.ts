@@ -17,6 +17,7 @@ import type { Bankroll, Decision } from "./lib/decide.ts";
 type BetDecision = Exclude<Decision, { action: "skip" }>;
 import { getMarket, getOpenEvents, getSeries, KalshiTrader, listSportsSeries } from "./lib/kalshi.ts";
 import type { KalshiEvent, KalshiMarket } from "./lib/kalshi.ts";
+import { aiFromEnv, explain, REPORT_SYSTEM } from "./lib/ai.ts";
 import { isTieLabel, matchGame } from "./lib/match.ts";
 import { fairLine, fetchOdds } from "./lib/odds.ts";
 import { DEFAULT_FEE, dollars, kalshiFee, validPrice } from "./lib/pricing.ts";
@@ -665,9 +666,41 @@ async function report() {
   const pctf = (x: number | null) => (x === null ? "—" : `${(x * 100).toFixed(1)}%`);
   const rows = (d.recent_bets as any[]).slice(0, 10).map((b) =>
     `<tr><td>${escapeHtml(b.label ?? "")}</td><td>${escapeHtml(b.team ?? "")}</td><td>${b.status}</td><td>${money(n(b.pnl))}</td></tr>`).join("");
+
+  // Optional plain-English summary written by Claude or Grok from these exact numbers.
+  const ai = aiFromEnv((k) => Deno.env.get(k));
+  let summary = "";
+  let aiStatus = ai ? "failed" : "off (no ANTHROPIC_API_KEY or XAI_API_KEY secret)";
+  if (ai) {
+    const r2 = (x: number | null) => (x === null ? null : Math.round(x * 100) / 100);
+    const facts = {
+      mode: d.mode, paused_reason: d.paused_reason, odds_key_present: d.odds_key_present,
+      paper_simulation: {
+        start_bankroll: p.start, bankroll: r2(p.equity), profit: r2(p.pnl), settled_bets: p.settled, won: p.won, lost: p.lost,
+        open_bets: p.open_bets, waiting_orders: p.waiting, return_on_stakes_pct: p.roi === null ? null : r2(p.roi * 100),
+        win_rate_pct: p.win_rate === null ? null : r2(p.win_rate * 100), expected_win_rate_pct: p.expected_win_rate === null ? null : r2(p.expected_win_rate * 100),
+        beat_the_close_cents: p.avg_clv === null ? null : r2(p.avg_clv * 100), beat_the_close_bets: p.clv_count, fees_paid: r2(p.fees),
+      },
+      real_money: { settled_bets: d.live.settled, open_bets: d.live.open_bets, profit: r2(d.live.pnl) },
+      real_money_unlock: { settled_needed: d.gate.min_settled, settled_so_far: d.gate.settled, paper_profit: r2(d.gate.paper_profit), paper_part_passed: d.gate.passes_paper_part },
+      recent_results: (d.recent_bets as any[]).slice(0, 10).map((b) => ({ game: b.label, pick: b.team, money: b.mode === "live" ? "real" : "paper", result: b.status, profit: r2(n(b.pnl)) })),
+      last_runs: (d.runs as any[]).slice(0, 4).map((r) => ({ task: r.task, ok: r.ok, note: r.summary?.note ?? null })),
+    };
+    try {
+      summary = await explain(ai, REPORT_SYSTEM, facts);
+      aiStatus = `ok (${ai.provider} ${ai.model})`;
+    } catch (e) {
+      aiStatus = `failed: ${(e as Error).message.slice(0, 160)}`;
+    }
+  }
+  const summaryHtml = summary
+    ? `<div style="background:#f3f6f2;border-radius:8px;padding:12px 14px;margin:8px 0 4px">${summary.split(/\n+/).map((para) => `<p style="margin:0 0 8px">${escapeHtml(para)}</p>`).join("")}<p style="margin:0;color:#666;font-size:12px">Written by AI from the numbers below. It explains; it doesn't pick bets.</p></div>`
+    : "";
+
   const html = `
   <div style="font-family:system-ui,sans-serif;max-width:560px">
     <h2>Edge Bot weekly report</h2>
+    ${summaryHtml}
     <p>Mode: <b>${d.mode}</b>${d.paused_reason ? ` (${escapeHtml(d.paused_reason)})` : ""}</p>
     <h3>Paper money (fake)</h3>
     <p>Bankroll ${money(p.equity)} (started ${money(p.start)}) · Profit ${money(p.pnl)} · ROI ${pctf(p.roi)}</p>
@@ -680,7 +713,7 @@ async function report() {
     <table cellpadding="4" style="border-collapse:collapse;font-size:14px">${rows || "<tr><td>No settled bets yet.</td></tr>"}</table>
     <p style="color:#666;font-size:12px">Odds credits left this month: ${d.odds_credits?.remaining ?? "—"}. Small samples are mostly luck; judge after a few hundred bets.</p>
   </div>`;
-  return { email: await sendEmail(`Edge Bot: ${money(p.pnl)} paper profit, ${p.settled} bets settled`, html) };
+  return { email: await sendEmail(`Edge Bot: ${money(p.pnl)} paper profit, ${p.settled} bets settled`, html), ai: aiStatus };
 }
 
 // ------------------------------------------------------------------ control
