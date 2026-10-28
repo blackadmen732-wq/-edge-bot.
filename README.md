@@ -129,7 +129,7 @@ supabase/functions/edgebot/lib/
   ai.ts         optional Claude/Grok writer for the weekly summary (explains only)
 dashboard/index.html                    stand-alone dashboard you can host anywhere (reads the engine's public dashboard data)
 dashboard/claude-dashboard/index.html   the page behind the Claude dashboard
-tests/core.test.ts                      31 tests of the math, matching, caps, AI writer and request signing (node --test tests/core.test.ts)
+tests/core.test.ts                      32 tests of the math, matching, caps, AI writer and request signing (node --test tests/core.test.ts)
 tests/e2e/                              15 end-to-end tests: real engine, in-memory database, fake Kalshi/odds/email/AI (tests/e2e/run.sh, needs Deno)
 ```
 

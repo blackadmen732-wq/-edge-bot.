@@ -6,7 +6,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { ceilCent, kalshiFee, devig, evPerDollar, maxMakerPrice, sizeBet, averageFair } from "../supabase/functions/edgebot/lib/pricing.ts";
+import { ceilCent, kalshiFee, devig, devigPower, evPerDollar, maxMakerPrice, sizeBet, averageFair } from "../supabase/functions/edgebot/lib/pricing.ts";
 import { decide } from "../supabase/functions/edgebot/lib/decide.ts";
 import { effectiveSettings, HARD } from "../supabase/functions/edgebot/lib/rules.ts";
 import type { Settings } from "../supabase/functions/edgebot/lib/rules.ts";
@@ -60,6 +60,14 @@ test("devig: two-way and three-way sum to 1", () => {
   const three = devig({ Home: 2.1, Draw: 3.4, Away: 3.6 })!;
   near(three.Home + three.Draw + three.Away, 1);
   assert.ok(three.Home > three.Away);
+});
+
+test("devigPower: sums to 1 and takes more of the cut from the long shot", () => {
+  const odds = { Fav: 1.25, Dog: 4.0 };
+  const pw = devigPower(odds)!, pr = devig(odds)!;
+  near(pw.Fav + pw.Dog, 1, 1e-6);
+  assert.ok(pw.Dog < pr.Dog, `power ${pw.Dog} should be below proportional ${pr.Dog}`);
+  assert.equal(devigPower({ A: 0.5, B: 2 }), null);
 });
 
 test("devig rejects broken prices", () => {
