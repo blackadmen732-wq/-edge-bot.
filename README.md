@@ -118,6 +118,33 @@ Withdrawing locks winnings in. Anything left on Kalshi is still at risk.
 
 - **Taxes:** Kalshi doesn't send a 1099 for trading profits, but profits are still taxable. Keep the bot's records (the dashboard and weekly emails) and ask a tax preparer how to report them.
 
+## Market making on weather markets (paper only)
+
+The replay test showed that betting one side when Kalshi "looks wrong" doesn't work: Kalshi's price is usually the better guess. So the bot also tries the other approach: **being the house**. Every 30 minutes it posts a buy price and a sell price on daily high-temperature markets in six cities (New York, Chicago, Miami, Austin, Los Angeles, Denver) and earns the gap when other people trade with it. **Fake money only.** There is no real-money path for this in the code.
+
+How it decides:
+
+1. **Starts from Kalshi's own price** (middle of the best buy and sell). A free forecast (Open-Meteo) may nudge it by at most 3¢. Never the other way round.
+2. **Inventory limits.** The more it owns in a market, the lower both its prices go, and at the limit (60 contracts) it stops adding. If money at risk nears the $500 fake bankroll, it only quotes the side that shrinks positions.
+3. **Steps aside before news.** No quotes while a weather model update (GFS, ECMWF) or NWS forecast is due, and none on a market's own day after 10 AM local time, when live readings take over.
+4. **Honest fake fills.** A quote only fills if a real Kalshi trade printed *through* its price after it was posted. It's assumed to be last in line.
+5. **"Picked off" score.** An hour after each fill it checks where the price went. Negative on average means better-informed traders are hitting its stale prices. This is the market-making version of "beat the close".
+6. **Liquidity rewards estimate.** It tracks how often both quotes sat near the best prices and whether they were big enough (100+ contracts per side) for Kalshi's Liquidity Incentive Program, which runs until January 1, 2027.
+7. **Sells overpriced long shots.** When the forecast puts a bracket at 8% or less but the market charges at least 3¢ more, it posts a sell-only quote there.
+8. **Alerts.** Email (and phone, see below) for big fills, inventory limits, the daily loss limit ($25) and pauses, at most once every few hours each.
+
+Settings live in `edgebot.settings` (`mm_*` columns) and can only be made stricter than the hard caps in `lib/mm.ts`. To turn it off: `update edgebot.settings set mm_enabled = false where id = 1;`
+
+### Switching market making on (about 5 minutes)
+
+1. **Database:** in Supabase open **SQL Editor**, paste all of `supabase/migrations/002_market_making.sql`, and click **Run**. It adds the tables and the 30-minute schedule.
+2. **Engine:** deploy the updated `edgebot` function (Edge Functions → edgebot → Code): replace `index.ts`, `lib/kalshi.ts`, `lib/rules.ts` and `lib/odds.ts`, and add the new files `lib/mm.ts` and `lib/weather.ts`. Then click **Deploy**.
+3. **Phone alerts (optional):** install the free **ntfy** app, subscribe to a long random topic name only you know (for example `edgebot-` plus 20 random letters), and add it as the secret `NTFY_TOPIC` on the Supabase secrets page.
+
+The weather series tickers are a best guess. If the run log says a series has no open markets, list the real ones with `?task=discover&category=Climate` and update `mm_series`.
+
+**Plain truth:** published tests found free forecasts don't beat Kalshi's weather prices, and the weather book has tightened a lot in 2026. Market making could still work because it earns the gap instead of predicting, but it loses money when faster, better-informed traders pick off its prices. Judge it on the "picked off" score and profit after a few hundred fills, not a few days.
+
 ## How to read the results
 
 - **Won–lost and profit over a few dozen bets are mostly luck.** A strategy with no edge wins 57%+ of 50 coin-flip bets about 1 time in 6.
@@ -128,6 +155,7 @@ Withdrawing locks winnings in. Anything left on Kalshi is still at risk.
 
 ```
 supabase/migrations/001_edgebot.sql     database tables (already applied)
+supabase/migrations/002_market_making.sql  market-making tables and schedule (run once in the SQL Editor)
 supabase/functions/edgebot/index.ts     the engine: scan, check-in, report, dashboard data, controls
 supabase/functions/edgebot/lib/
   rules.ts      hard limits and leagues
@@ -137,9 +165,12 @@ supabase/functions/edgebot/lib/
   decide.ts     bet now / wait / skip
   kalshi.ts     Kalshi market data + signed order requests
   ai.ts         optional Claude/Grok writer for the weekly summary (explains only)
+  mm.ts         market making (paper only): quotes, inventory limits, news windows, fake fills, accounting
+  weather.ts    free Open-Meteo daily high forecasts
 dashboard/index.html                    stand-alone dashboard you can host anywhere (reads the engine's public dashboard data)
 dashboard/claude-dashboard/index.html   the page behind the Claude dashboard
-tests/core.test.ts                      31 tests of the math, matching, caps, AI writer and request signing (node --test tests/core.test.ts)
+tests/core.test.ts                      32 tests of the math, matching, caps, AI writer and request signing (node --test tests/core.test.ts)
+tests/mm.test.ts                        15 market-making tests (node --test tests/mm.test.ts)
 tests/e2e/                              15 end-to-end tests: real engine, in-memory database, fake Kalshi/odds/email/AI (tests/e2e/run.sh, needs Deno)
 ```
 
