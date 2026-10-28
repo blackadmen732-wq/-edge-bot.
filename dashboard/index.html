@@ -144,6 +144,10 @@
   <div class="scroll"><table id="signals"><thead><tr><th>Pick</th><th class="r">Fair</th><th class="r">Ask</th><th class="r">Edge</th><th>Decision</th></tr></thead><tbody></tbody></table></div>
   <p class="muted" id="unmatched"></p>
 
+  <h2>Market making (paper)</h2>
+  <p class="muted">Fake money. The bot posts a buy and a sell price on big-city weather markets and earns the gap when others trade. The number that matters most is where the price goes an hour after our fills: if it keeps moving against us, better-informed traders are picking us off.</p>
+  <div id="mm"><div class="empty">Not set up yet. Run the market-making database setup to switch it on.</div></div>
+
   <h2>Controls</h2>
   <p class="muted">Needs your control token (saved on this phone after the first use).</p>
   <div class="controls">
@@ -249,6 +253,30 @@ async function load() {
     <td>${decisions[s.decision] || esc(s.decision)}<div class="muted">${esc(s.reason)}</div></td></tr>`).join("")
     || `<tr><td colspan="5" class="muted">Nothing scanned yet.</td></tr>`;
   setText("unmatched", d.unmatched_last_day ? d.unmatched_last_day + " Kalshi games in the last day couldn't be matched to a sportsbook game with confidence, so they were skipped." : "");
+
+  // Market making
+  const mm = d.market_making;
+  if (mm) {
+    const mo = mm.avg_markout_cents;
+    const strat = { two_sided: "Both sides", tail_sell: "Selling long shots" };
+    $("mm").innerHTML = `
+      <section class="board" aria-label="Market making">
+        <p class="muted">Market-making bankroll (fake money)${mm.enabled ? "" : " · switched off"}${mm.halted_today ? " · stopped for today (loss limit)" : ""}</p>
+        <div class="num big">${money(mm.equity)}</div>
+        <p class="muted">Started at ${money(mm.bankroll_start)}. Profit ${signedMoney(mm.pnl)}, fees ${money(mm.fees)}. ${mm.open_positions} open positions, ${mm.settled_markets} settled.</p>
+        <div class="row">
+          <div><div class="num">${mm.fills}</div><div class="muted">Fills (${mm.contracts_filled} contracts)</div></div>
+          <div><div class="num ${mo === null ? "" : mo > 0 ? "pos" : mo < 0 ? "neg" : ""}">${mo === null ? "—" : (mo > 0 ? "+" : "") + mo.toFixed(2) + "¢"}</div><div class="muted">Price 1 hour after fills</div></div>
+          <div><div class="num">${mm.lip_competitive_share_7d === null ? "—" : pct(mm.lip_competitive_share_7d, 0)}</div><div class="muted">Near best prices (7 days)</div></div>
+        </div>
+      </section>
+      <p class="muted" style="margin-top:8px">Kalshi's liquidity rewards need at least ${mm.lip_target} contracts on each side; ${mm.lip_size_ok_share_7d === null ? "—" : pct(mm.lip_size_ok_share_7d, 0)} of quotes were that big. Cities: ${esc(mm.cities.join(", "))}.</p>
+      <div class="scroll"><table><thead><tr><th>Fill</th><th class="r">Price</th><th class="r">Contracts</th><th class="r">1 hour later</th></tr></thead><tbody>${
+        (mm.recent_fills || []).map((f) => `<tr><td>${f.side === "bid" ? "Bought" : "Sold"} ${esc(f.ticker)}<div class="muted">${strat[f.strategy] || esc(f.strategy)} · ${when(f.filled_at)}</div></td>
+          <td class="r">${cents(f.price)}</td><td class="r">${Number(f.contracts)}</td>
+          <td class="r ${f.markout === null ? "" : Number(f.markout) > 0 ? "pos" : Number(f.markout) < 0 ? "neg" : ""}">${f.markout === null ? "—" : (Number(f.markout) * 100).toFixed(1) + "¢"}</td></tr>`).join("")
+        || `<tr><td colspan="4" class="muted">No fills yet. Quotes only fill when someone trades through our price.</td></tr>`}</tbody></table></div>`;
+  }
 
   // Rules
   const s = d.settings, h = s.hard_caps;

@@ -25,6 +25,10 @@ export interface KalshiMarket {
   volume_fp?: string;
   open_interest_fp?: string;
   mve_collection_ticker?: string;
+  strike_type?: string;
+  floor_strike?: number | null;
+  cap_strike?: number | null;
+  subtitle?: string;
 }
 
 export interface KalshiEvent {
@@ -73,10 +77,34 @@ export async function getSeries(seriesTicker: string): Promise<any> {
   return data.series;
 }
 
-/** List sports series (used once to discover the right series tickers). */
-export async function listSportsSeries(): Promise<any[]> {
-  const data = await getJson("/series", { category: "Sports" });
+/** List series in a category (used once to discover the right series tickers). */
+export async function listSportsSeries(category = "Sports"): Promise<any[]> {
+  const data = await getJson("/series", { category });
   return data.series ?? [];
+}
+
+export interface KalshiTrade {
+  price: number; // YES price in dollars
+  count: number;
+  time: number;  // ms
+}
+
+/** Public trades in one market since `sinceMs` (newest first from Kalshi; order doesn't matter here). */
+export async function getTrades(ticker: string, sinceMs: number): Promise<KalshiTrade[]> {
+  const out: KalshiTrade[] = [];
+  let cursor = "";
+  for (let page = 0; page < 10; page++) {
+    const data = await getJson("/markets/trades", { ticker, min_ts: Math.floor(sinceMs / 1000), limit: 1000, cursor });
+    for (const t of data.trades ?? []) {
+      const price = t.yes_price_dollars !== undefined ? parseFloat(t.yes_price_dollars) : Number(t.yes_price) / 100;
+      const count = t.count_fp !== undefined ? parseFloat(t.count_fp) : Number(t.count);
+      const time = Date.parse(t.created_time);
+      if (Number.isFinite(price) && Number.isFinite(count) && Number.isFinite(time)) out.push({ price, count, time });
+    }
+    cursor = data.cursor ?? "";
+    if (!cursor) break;
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- signing

@@ -6,7 +6,8 @@
 //   report    weekly email summary
 //   dashboard public read-only JSON for the dashboard page
 //   control   pause / resume / go_live (needs the control token)
-//   discover  list Kalshi sports series (needs the control token)
+//   mm        every 30 min: paper market making on weather markets (fake money only)
+//   discover  list Kalshi series, ?category=Sports (default) or Climate (needs the control token)
 //
 // Paper trading always runs. Real money only runs in "live" mode, and only after the live gate passes.
 
@@ -15,7 +16,7 @@ import { decide } from "./lib/decide.ts";
 import type { Bankroll, Decision } from "./lib/decide.ts";
 
 type BetDecision = Exclude<Decision, { action: "skip" }>;
-import { getMarket, getOpenEvents, getSeries, KalshiTrader, listSportsSeries } from "./lib/kalshi.ts";
+import { getMarket, getOpenEvents, getSeries, getTrades, KalshiTrader, listSportsSeries } from "./lib/kalshi.ts";
 import type { KalshiEvent, KalshiMarket } from "./lib/kalshi.ts";
 import { aiFromEnv, explain, REPORT_SYSTEM } from "./lib/ai.ts";
 import { isTieLabel, matchGame } from "./lib/match.ts";
@@ -24,6 +25,12 @@ import { DEFAULT_FEE, dollars, kalshiFee, validPrice } from "./lib/pricing.ts";
 import type { FeeInfo } from "./lib/pricing.ts";
 import { effectiveSettings, HARD, LEAGUES } from "./lib/rules.ts";
 import type { Settings } from "./lib/rules.ts";
+import {
+  applyFill, bracketProb, daysBetween, effectiveMm, eventDate, fairPrice, forecastSigma, inNewsWindow, lipCompetitive, localDateHour,
+  makeQuotes, markout, markValue, marketMid, MM_CITIES, MM_HARD, parseBracket, settleValue, simulateFill, worstCase,
+} from "./lib/mm.ts";
+import type { MmSettings } from "./lib/mm.ts";
+import { forecastHighs } from "./lib/weather.ts";
 
 export const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: Number(Deno.env.get("EDGEBOT_DB_MAX_CONN") ?? 3), idle_timeout: 20 });
 
@@ -163,6 +170,28 @@ async function liveGate(): Promise<{ ok: boolean; reasons: string[]; balance?: n
 async function pause(reason: string) {
   await sql`update edgebot.settings set mode = 'paused', paused_reason = ${reason}, updated_at = now() where id = 1`;
   await sendEmail(`Edge Bot paused: ${reason}`, `<p>The bot paused itself.</p><p><b>Reason:</b> ${escapeHtml(reason)}</p><p>Nothing else will be bet until you resume it from the dashboard.</p>`);
+  await push(`Edge Bot paused`, reason);
+}
+
+/** Phone notification through ntfy.sh (free app). Only if the NTFY_TOPIC secret is set. */
+async function push(title: string, text: string): Promise<string> {
+  const topic = Deno.env.get("NTFY_TOPIC");
+  if (!topic) return "push not configured";
+  try {
+    const res = await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, { method: "POST", headers: { Title: title.slice(0, 200) }, body: text.slice(0, 2000), signal: AbortSignal.timeout(10000) });
+    return res.ok ? "push sent" : `push failed ${res.status}`;
+  } catch (e) {
+    return `push failed: ${(e as Error).message.slice(0, 80)}`;
+  }
+}
+
+/** Email + phone alert, at most once per `everyHours` for the same key. */
+async function alertOnce(key: string, subject: string, text: string, everyHours: number): Promise<string | null> {
+  const prev = await stateGet<{ at: string }>(`alert:${key}`);
+  if (prev && Date.now() - new Date(prev.updated_at).getTime() < everyHours * 3.6e6) return null;
+  await stateSet(`alert:${key}`, { at: new Date().toISOString() });
+  const mail = await sendEmail(subject, `<p>${escapeHtml(text)}</p><p style="color:#666;font-size:12px">Market making is paper trading: fake money only.</p>`);
+  return `${mail}, ${await push(subject, text)}`;
 }
 
 /** No ceiling on winnings: the bot keeps going, and emails once each time a new $1,000 level is passed. */
@@ -594,6 +623,265 @@ async function tick() {
   return out;
 }
 
+// ------------------------------------------------------------------ market making (paper only, fake money)
+
+const SETTLED_STATES = ["determined", "finalized", "amended", "settled"];
+
+function bookOf(mk: KalshiMarket) {
+  const bid = dollars(mk.yes_bid_dollars), ask = dollars(mk.yes_ask_dollars), last = dollars(mk.last_price_dollars);
+  return { bid, ask, mid: marketMid(bid, ask, last) };
+}
+
+/**
+ * One market-making round:
+ * 1) read Kalshi prices, 2) fake-fill last round's quotes from real trades (strictly through our price),
+ * 3) score fills an hour later ("picked off" check), 4) settle and value positions, 5) daily loss limit,
+ * 6) post new quotes, unless a weather model update is due, the day's loss limit is hit, or the bot is paused.
+ */
+async function mmRun(runId: number) {
+  const [row] = await sql`select * from edgebot.settings where id = 1`;
+  const base = effectiveSettings(row as unknown as Settings);
+  const m: MmSettings = effectiveMm(row as any);
+  const now = Date.now();
+  const nowDate = new Date(now);
+  const notes: string[] = [];
+  const out: Record<string, unknown> = { fills: 0, contracts_filled: 0, markouts: 0, settled: 0, quotes: 0, notes };
+
+  // 1) Current prices for every market in the chosen weather series.
+  const markets = new Map<string, { mk: KalshiMarket; series: string; event: string }>();
+  for (const series of m.mm_series) {
+    try {
+      const events = await getOpenEvents(series);
+      if (events.length === 0) notes.push(`${series}: no open markets (check the ticker with ?task=discover&category=Climate)`);
+      for (const e of events) for (const mk of e.markets ?? []) markets.set(mk.ticker, { mk, series, event: e.event_ticker });
+    } catch (e) {
+      notes.push(`${series}: ${redactSecrets((e as Error).message).slice(0, 120)}`);
+    }
+  }
+  out.markets_seen = markets.size;
+
+  // 2) Fake fills for the quotes that rested since the last round.
+  const active = await sql`select * from edgebot.mm_quotes where status = 'active'`;
+  const byTicker = new Map<string, any[]>();
+  for (const q of active) byTicker.set(q.ticker, [...(byTicker.get(q.ticker) ?? []), q]);
+  const bigFills: string[] = [];
+  for (const [ticker, qs] of byTicker) {
+    let trades: Awaited<ReturnType<typeof getTrades>> | null = null;
+    try {
+      const since = Math.min(...qs.map((q) => new Date(q.posted_at).getTime()));
+      trades = await getTrades(ticker, since - 1000);
+    } catch (e) {
+      notes.push(`fills ${ticker}: could not read trades (${redactSecrets((e as Error).message).slice(0, 80)}); counted as unfilled`);
+    }
+    const fee = await feeInfo(qs[0].series);
+    const live = markets.get(ticker);
+    const midNow = live ? bookOf(live.mk).mid : NaN;
+    for (const q of qs) {
+      const size = Number(q.size), price = Number(q.price);
+      const filled = trades ? simulateFill(q.side, price, size, new Date(q.posted_at).getTime(), now, trades) : 0;
+      const status = filled <= 0 ? "expired" : filled >= size ? "filled" : "partial";
+      const upd = await sql`update edgebot.mm_quotes set status = ${status}, filled = ${filled}, closed_at = now() where id = ${q.id} and status = 'active' returning id`;
+      if (filled <= 0 || upd.length === 0) continue;
+      const f = kalshiFee(price, filled, "maker", fee);
+      await sql`insert into edgebot.mm_fills ${sql({
+        quote_id: q.id, series: q.series, event_ticker: q.event_ticker, ticker, side: q.side, strategy: q.strategy,
+        price, contracts: filled, fee: f, mid_at_fill: Number.isFinite(midNow) ? midNow : null,
+      })}`;
+      const [p] = await sql`select position, cash from edgebot.mm_positions where ticker = ${ticker}`;
+      const np = applyFill({ position: Number(p?.position ?? 0), cash: Number(p?.cash ?? 0) }, q.side, price, filled, f);
+      await sql`insert into edgebot.mm_positions (ticker, series, event_ticker, position, cash, fees)
+                values (${ticker}, ${q.series}, ${q.event_ticker}, ${np.position}, ${np.cash}, ${f})
+                on conflict (ticker) do update set position = excluded.position, cash = excluded.cash,
+                  fees = edgebot.mm_positions.fees + excluded.fees, updated_at = now()`;
+      out.fills = Number(out.fills) + 1;
+      out.contracts_filled = Number(out.contracts_filled) + filled;
+      if (filled >= m.mm_alert_fill_contracts) bigFills.push(`${q.side === "bid" ? "bought" : "sold"} ${filled} of ${ticker} at ${Math.round(price * 100)}¢`);
+    }
+  }
+  if (bigFills.length) {
+    const a = await alertOnce("mm-bigfill", "Edge Bot (paper): big market-making fill", bigFills.join("; "), 1);
+    if (a) notes.push(`alert: ${a}`);
+  }
+
+  // 3) "Picked off" score: where did the price go about an hour after each fill?
+  const due = await sql`select * from edgebot.mm_fills where markout is null
+                        and filled_at < now() - make_interval(mins => ${MM_HARD.MARKOUT_MINUTES})
+                        and filled_at > now() - interval '3 days' order by filled_at limit 300`;
+  const marketCache = new Map<string, KalshiMarket | null>();
+  const marketFor = async (ticker: string): Promise<KalshiMarket | null> => {
+    const live = markets.get(ticker);
+    if (live) return live.mk;
+    if (!marketCache.has(ticker)) {
+      try {
+        marketCache.set(ticker, await getMarket(ticker));
+      } catch {
+        marketCache.set(ticker, null);
+      }
+    }
+    return marketCache.get(ticker) ?? null;
+  };
+  for (const f of due) {
+    const mk = await marketFor(f.ticker);
+    if (!mk) continue;
+    let later = bookOf(mk).mid;
+    if (SETTLED_STATES.includes(mk.status) && (mk.result === "yes" || mk.result === "no")) later = mk.result === "yes" ? 0.999999 : 0.000001;
+    const mo = markout(f.side, Number(f.price), later);
+    if (!Number.isFinite(mo)) continue;
+    await sql`update edgebot.mm_fills set markout = ${mo}, markout_at = now() where id = ${f.id}`;
+    out.markouts = Number(out.markouts) + 1;
+  }
+
+  // 4) Settle finished markets; value the rest at the market's price.
+  const open = await sql`select * from edgebot.mm_positions where not settled`;
+  const inventory = new Map<string, number>();
+  let openValue = 0, worst = 0;
+  const atLimit: string[] = [];
+  for (const p of open) {
+    const pos = { position: Number(p.position), cash: Number(p.cash) };
+    const mk = await marketFor(p.ticker);
+    if (mk && SETTLED_STATES.includes(mk.status) && (mk.result === "yes" || mk.result === "no")) {
+      const pnl = settleValue(pos, mk.result === "yes");
+      await sql`update edgebot.mm_positions set settled = true, result = ${mk.result}, pnl = ${pnl}, updated_at = now() where ticker = ${p.ticker}`;
+      out.settled = Number(out.settled) + 1;
+      continue;
+    }
+    const mid = mk ? bookOf(mk).mid : Number(p.last_mid);
+    if (mk && Number.isFinite(mid)) await sql`update edgebot.mm_positions set last_mid = ${mid}, updated_at = now() where ticker = ${p.ticker}`;
+    openValue += markValue(pos, Number.isFinite(mid) ? mid : NaN);
+    worst += worstCase(pos);
+    inventory.set(p.ticker, pos.position);
+    if (m.mm_max_inventory > 0 && Math.abs(pos.position) >= m.mm_max_inventory) atLimit.push(`${p.ticker} (${pos.position})`);
+  }
+  const [rz] = await sql`select coalesce(sum(pnl), 0) as realized from edgebot.mm_positions where settled`;
+  const equity = m.mm_bankroll + n(rz.realized) + openValue;
+  out.equity = Math.round(equity * 100) / 100;
+  out.money_at_risk = Math.round(worst * 100) / 100;
+  if (atLimit.length) {
+    const a = await alertOnce("mm-inventory", "Edge Bot (paper): inventory limit reached", `Holding the most allowed in: ${atLimit.join(", ")}. It now only quotes the side that shrinks these positions.`, 6);
+    if (a) notes.push(`alert: ${a}`);
+  }
+
+  // 5) Daily loss limit (UTC day).
+  const today = nowDate.toISOString().slice(0, 10);
+  const day = await stateGet<{ date: string; start: number; halted?: boolean }>("mm:day");
+  const start = day?.value.date === today ? Number(day.value.start) : equity;
+  let halted = day?.value.date === today && !!day.value.halted;
+  if (!halted && m.mm_daily_loss_limit > 0 && equity - start <= -m.mm_daily_loss_limit) {
+    halted = true;
+    const a = await alertOnce("mm-dayloss", "Edge Bot (paper): market making stopped for today",
+      `Paper market making is down $${(start - equity).toFixed(2)} today (limit $${m.mm_daily_loss_limit}). It stops quoting until tomorrow (UTC).`, 12);
+    if (a) notes.push(`alert: ${a}`);
+  }
+  await stateSet("mm:day", { date: today, start, halted });
+  out.day_pnl = Math.round((equity - start) * 100) / 100;
+
+  // 6) New quotes.
+  if (!m.mm_enabled) return { ...out, note: "market making is switched off (mm_enabled = false)" };
+  if (base.mode === "paused") return { ...out, note: `bot paused: ${base.paused_reason ?? ""}` };
+  if (halted) return { ...out, note: "daily loss limit hit: no quotes until tomorrow (UTC)" };
+  if (inNewsWindow(nowDate)) return { ...out, note: "stepped aside: a weather model update is due" };
+
+  const forecasts = new Map<string, Map<string, number>>();
+  for (const series of m.mm_series) {
+    try {
+      forecasts.set(series, await forecastHighs(MM_CITIES[series]));
+    } catch (e) {
+      notes.push(`forecast ${series}: ${(e as Error).message.slice(0, 80)} (quoting on market price alone)`);
+    }
+  }
+  const riskFull = m.mm_bankroll > 0 && worst >= 0.8 * m.mm_bankroll;
+  if (riskFull) notes.push("money at risk is near the bankroll: only quoting sides that shrink positions");
+  const rows: any[] = [];
+  const skipped: Record<string, number> = {};
+  for (const [ticker, { mk, series, event }] of markets) {
+    if (mk.status !== "active") continue;
+    const city = MM_CITIES[series];
+    const ed = eventDate(event);
+    if (!city || !ed) continue;
+    const local = localDateHour(nowDate, city.tz);
+    const ahead = daysBetween(local.date, ed);
+    if (ahead < 0 || ahead > 2) continue;
+    if (ahead === 0 && local.hour >= MM_HARD.SAME_DAY_CUTOFF_HOUR) {
+      skipped["same day, live readings take over"] = (skipped["same day, live readings take over"] ?? 0) + 1;
+      continue;
+    }
+    const book = bookOf(mk);
+    const bracket = parseBracket(mk);
+    const mu = forecasts.get(series)?.get(ed);
+    const forecastP = bracket && mu !== undefined ? bracketProb(bracket, mu, forecastSigma(ahead)) : null;
+    const fair = fairPrice(book.mid, forecastP, m.mm_forecast_weight);
+    const q = makeQuotes({ mid: book.mid, fair, forecastP, marketBid: book.bid, marketAsk: book.ask, inventory: inventory.get(ticker) ?? 0, riskFull, s: m });
+    if (q.strategy === "none") {
+      skipped[q.reason] = (skipped[q.reason] ?? 0) + 1;
+      continue;
+    }
+    const lip = lipCompetitive(q, book.bid, book.ask);
+    const common = {
+      run_id: runId, series, event_ticker: event, ticker, strategy: q.strategy, fair: Number.isFinite(fair) ? fair : null,
+      market_mid: Number.isFinite(book.mid) ? book.mid : null, market_bid: Number.isFinite(book.bid) ? book.bid : null,
+      market_ask: Number.isFinite(book.ask) ? book.ask : null, forecast_p: forecastP === null || !Number.isFinite(forecastP) ? null : forecastP,
+      lip_competitive: lip,
+    };
+    if (q.bid) rows.push({ ...common, side: "bid", price: q.bid.price, size: q.bid.size });
+    if (q.ask) rows.push({ ...common, side: "ask", price: q.ask.price, size: q.ask.size });
+  }
+  for (let i = 0; i < rows.length; i += 200) await sql`insert into edgebot.mm_quotes ${sql(rows.slice(i, i + 200))}`;
+  out.quotes = rows.length;
+  out.skipped = skipped;
+  return out;
+}
+
+/** Market-making numbers for the dashboard and weekly report. Null until the market-making tables exist. */
+async function mmStats() {
+  try {
+    const [row] = await sql`select * from edgebot.settings where id = 1`;
+    const m = effectiveMm(row as any);
+    const [f] = await sql`select count(*)::int as fills, coalesce(sum(contracts), 0)::int as contracts, coalesce(sum(fee), 0) as fees,
+                            avg(markout) filter (where markout is not null) as avg_markout, count(markout)::int as markout_count,
+                            coalesce(sum(markout * contracts) filter (where markout is not null), 0) as markout_dollars
+                          from edgebot.mm_fills`;
+    const [q] = await sql`select count(*)::int as quotes, count(*) filter (where lip_competitive)::int as competitive,
+                            count(*) filter (where filled > 0)::int as hit, count(*) filter (where size >= ${m.mm_lip_target})::int as big_enough
+                          from edgebot.mm_quotes where posted_at > now() - interval '7 days'`;
+    const [p] = await sql`select coalesce(sum(pnl) filter (where settled), 0) as realized,
+                            coalesce(sum(cash + position * coalesce(last_mid, 0.5)) filter (where not settled), 0) as open_value,
+                            count(*) filter (where not settled and position <> 0)::int as open_positions,
+                            count(*) filter (where settled)::int as settled_markets
+                          from edgebot.mm_positions`;
+    const byStrategy = await sql`select strategy, count(*)::int as fills, coalesce(sum(contracts), 0)::int as contracts, avg(markout) as avg_markout
+                                 from edgebot.mm_fills group by strategy order by strategy`;
+    const recent = await sql`select filled_at, ticker, side, strategy, price, contracts, fee, markout from edgebot.mm_fills order by filled_at desc limit 20`;
+    const day = await stateGet<{ date: string; start: number; halted?: boolean }>("mm:day");
+    const realized = n(p.realized), openValue = n(p.open_value);
+    return {
+      enabled: m.mm_enabled,
+      cities: m.mm_series.map((s) => MM_CITIES[s]?.name ?? s),
+      bankroll_start: m.mm_bankroll,
+      equity: m.mm_bankroll + realized + openValue,
+      pnl: realized + openValue,
+      realized,
+      open_positions: p.open_positions,
+      settled_markets: p.settled_markets,
+      fills: f.fills,
+      contracts_filled: f.contracts,
+      fees: n(f.fees),
+      avg_markout_cents: f.avg_markout === null ? null : n(f.avg_markout) * 100,
+      markout_count: f.markout_count,
+      markout_dollars: n(f.markout_dollars),
+      quotes_7d: q.quotes,
+      quotes_hit_7d: q.hit,
+      lip_competitive_share_7d: q.quotes > 0 ? q.competitive / q.quotes : null,
+      lip_size_ok_share_7d: q.quotes > 0 ? q.big_enough / q.quotes : null,
+      lip_target: m.mm_lip_target,
+      halted_today: !!day?.value.halted && day.value.date === new Date().toISOString().slice(0, 10),
+      by_strategy: byStrategy,
+      recent_fills: recent,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ------------------------------------------------------------------ dashboard + report
 
 async function stats(mode: Mode) {
@@ -673,6 +961,7 @@ async function dashboard() {
     top_signals: signals,
     unmatched_last_day: unmatched[0]?.c ?? 0,
     runs,
+    market_making: await mmStats(),
   };
 }
 
@@ -726,6 +1015,7 @@ async function report() {
     <p>Fees paid: ${money(p.fees)}</p>
     <p>Real-money gate: ${d.gate.settled}/${d.gate.min_settled} settled bets, paper profit ${money(d.gate.paper_profit)} — ${d.gate.passes_paper_part ? "paper part passed" : "not yet"}.</p>
     ${d.live.settled + d.live.open_bets > 0 ? `<h3>Real money</h3><p>Profit ${money(d.live.pnl)} · Settled ${d.live.settled} · Open ${d.live.open_bets}</p>` : ""}
+    ${d.market_making ? `<h3>Market making (paper)</h3><p>Profit ${money(d.market_making.pnl)} on a ${money(d.market_making.bankroll_start)} fake bankroll · ${d.market_making.fills} fills (${d.market_making.contracts_filled} contracts) · Price an hour after our fills: ${d.market_making.avg_markout_cents === null ? "—" : d.market_making.avg_markout_cents.toFixed(2) + "¢"} per contract (negative means better-informed traders are picking us off).</p>` : ""}
     <h3>Latest results</h3>
     <table cellpadding="4" style="border-collapse:collapse;font-size:14px">${rows || "<tr><td>No settled bets yet.</td></tr>"}</table>
     <p style="color:#666;font-size:12px">Odds credits left this month: ${d.odds_credits?.remaining ?? "—"}. Small samples are mostly luck; judge after a few hundred bets.</p>
@@ -756,9 +1046,9 @@ async function control(body: any) {
   return { ok: false, error: "unknown action (use pause, resume_paper, go_live, gate)" };
 }
 
-async function discover() {
-  const series = await listSportsSeries();
-  const games = series.filter((x: any) => /GAME/i.test(x.ticker ?? ""));
+async function discover(category = "Sports") {
+  const series = await listSportsSeries(category);
+  const games = category === "Sports" ? series.filter((x: any) => /GAME/i.test(x.ticker ?? "")) : series;
   const out = [];
   for (const g of games.slice(0, 80)) out.push({ ticker: g.ticker, title: g.title, fee_type: g.fee_type, fee_multiplier: g.fee_multiplier });
   return { count: games.length, series: out, configured: Object.values(LEAGUES).map((l) => ({ league: l.key, series: l.series })) };
@@ -773,7 +1063,7 @@ Deno.serve(async (req) => {
   try {
     if (task === "dashboard") return json(await dashboard());
 
-    if (task === "scan" || task === "tick" || task === "report") {
+    if (task === "scan" || task === "tick" || task === "report" || task === "mm") {
       const expected = await vault("edgebot_cron_secret");
       if (!expected || req.headers.get("x-edgebot-cron") !== expected) {
         // The control token may also trigger these by hand (e.g. "run a scan now" from the dashboard).
@@ -782,7 +1072,7 @@ Deno.serve(async (req) => {
       }
       const id = await startRun(task);
       try {
-        const result = task === "scan" ? await scan(id) : task === "tick" ? await tick() : await report();
+        const result = task === "scan" ? await scan(id) : task === "tick" ? await tick() : task === "mm" ? await mmRun(id) : await report();
         await finishRun(id, true, result);
         return json({ ok: true, run: id, result });
       } catch (e) {
@@ -794,7 +1084,7 @@ Deno.serve(async (req) => {
     if (task === "control" || task === "discover") {
       const ctl = await vault("edgebot_control_token");
       if (!ctl || req.headers.get("x-edgebot-token") !== ctl) return json({ error: "unauthorized" }, 401);
-      if (task === "discover") return json(await discover());
+      if (task === "discover") return json(await discover(url.searchParams.get("category") ?? "Sports"));
       const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
       return json(await control(body));
     }
