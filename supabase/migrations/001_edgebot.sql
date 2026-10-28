@@ -3,7 +3,7 @@
 -- The schema is NOT exposed through the public REST API; only the edge function (direct DB
 -- connection) reads and writes it.
 
-create extension if not exists pg_net;
+create extension if not exists pg_net with schema extensions;
 
 create schema if not exists edgebot;
 -- New schemas give the public API roles (anon, authenticated) no access by default,
