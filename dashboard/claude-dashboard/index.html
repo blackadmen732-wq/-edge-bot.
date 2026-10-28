@@ -1,0 +1,387 @@
+<meta name="dash-one-writer">
+<style>
+  .eb { font-family: var(--font-anthropic-sans); color: var(--color-fg); }
+  .eb h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0 0 var(--cds-gap-xs); }
+  .eb h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-xs); }
+  .eb p { margin: 0 0 var(--cds-gap-sm); }
+  .eb .eb-note { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .eb .eb-lede { font-size: var(--cds-font-size-body); }
+  .eb-alert { border: 1px solid var(--color-border-line); border-left: 3px solid var(--cds-chart-status-critical); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); margin-top: var(--cds-gap-sm); }
+  .eb-section { margin-top: var(--cds-gap-xl); }
+  .eb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: var(--cds-gap-md); }
+  .eb-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+  .eb-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: var(--cds-gap-md); margin-top: var(--cds-gap-md); }
+  .eb-tile .eb-label { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: 0 0 var(--cds-gap-xs); }
+  .eb-num { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .eb-bank .eb-num { font-size: calc(var(--cds-font-size-title) * 1.8); }
+  .eb-pos { color: var(--color-ok); }
+  .eb-neg { color: var(--color-bad); }
+  .eb-field { min-height: 76px; margin-top: var(--cds-gap-sm); }
+  .eb-field svg, .eb-chart svg { display: block; }
+  .eb-checks { list-style: none; margin: var(--cds-gap-sm) 0 0; padding: 0; display: grid; gap: var(--cds-gap-xs); }
+  .eb-checks li { display: flex; gap: var(--cds-gap-sm); align-items: baseline; }
+  .eb-checks li::before { content: ""; flex: none; width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1.5px solid var(--color-fg-muted); transform: translateY(0.05rem); }
+  .eb-checks li.eb-done::before { background: var(--color-ok); border-color: var(--color-ok); }
+  .eb-chart { position: relative; min-height: 190px; }
+  .eb-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; }
+  .eb-tip .eb-tip-head { color: var(--cds-text-secondary); }
+  .eb-scroll { max-height: 26rem; overflow: auto; }
+  .eb table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  .eb th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); }
+  .eb td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+  .eb .eb-r { text-align: right; }
+  .eb-rules { margin: var(--cds-gap-xs) 0 0; padding-left: 1.1rem; display: grid; gap: var(--cds-gap-xs); }
+  .eb-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .eb-fail::before { content: ""; width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--color-bad); }
+  [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+</style>
+
+<div class="eb">
+  <header id="top">
+    <h1>Edge Bot</h1>
+    <p class="eb-lede">The bot is <b data-draw="mode" data-source="summary" data-field="mode_label">—</b>. Last check-in <span data-draw="lastRun" data-source="summary" data-field="last_run_et">—</span> Eastern.</p>
+    <p class="eb-alert eb-paused" hidden>Paused: <span data-draw="pausedReason" data-source="summary" data-field="paused_reason">—</span>. Nothing new gets bet until you ask Claude to resume it.</p>
+  </header>
+
+  <section class="eb-tiles" id="scoreboard" aria-label="Paper bankroll">
+    <div class="eb-card eb-tile eb-bank">
+      <p class="eb-label">Paper bankroll (fake money)</p>
+      <div class="eb-num dash-skeleton" data-draw="bankroll" data-source="summary" data-field="bankroll">—</div>
+      <p class="eb-note">Started at <span data-draw="start" data-source="summary" data-field="start_bankroll">—</span></p>
+    </div>
+    <div class="eb-card eb-tile">
+      <p class="eb-label">Profit so far</p>
+      <div class="eb-num dash-skeleton" data-draw="profit" data-source="summary" data-field="profit">—</div>
+      <p class="eb-note">After fees of <span data-draw="fees" data-source="summary" data-field="fees">—</span></p>
+    </div>
+    <div class="eb-card eb-tile">
+      <p class="eb-label">Won–lost</p>
+      <div class="eb-num"><span data-draw="won" data-source="summary" data-field="won">—</span>–<span data-draw="lost" data-source="summary" data-field="lost">—</span></div>
+      <p class="eb-note"><span data-draw="openCount" data-source="summary" data-field="open_bets">—</span> still open</p>
+    </div>
+    <div class="eb-card eb-tile">
+      <p class="eb-label">Return on money bet</p>
+      <div class="eb-num" data-draw="roi" data-source="summary" data-field="roi_pct">—</div>
+      <p class="eb-note">Profit divided by what was staked</p>
+    </div>
+    <div class="eb-card eb-tile">
+      <p class="eb-label">Beat the closing price</p>
+      <div class="eb-num" data-draw="clv" data-source="summary" data-field="beat_close_cents">—</div>
+      <p class="eb-note">Average over <span data-draw="clvCount" data-source="summary" data-field="clv_count">—</span> bets</p>
+    </div>
+  </section>
+  <p class="eb-note" style="margin-top: var(--cds-gap-sm)">Beating the closing price means the bot bought cheaper than Kalshi's price at kickoff. Positive over many bets is the best early sign of a real edge. Wins and losses over a few dozen bets are mostly luck.</p>
+
+  <section class="eb-section eb-card" id="road">
+    <h2>Road to real money</h2>
+    <p class="eb-note">Each finished paper bet is a yard. Real money can only switch on at the goal line, and only if every check below is done.</p>
+    <div class="eb-field dash-skeleton" data-draw="field" data-source="summary"></div>
+    <ul class="eb-checks">
+      <li class="eb-check-settled"><span><b data-draw="settled" data-source="summary" data-field="settled">—</b> of <span data-draw="unlock" data-source="summary" data-field="bets_to_unlock">—</span> paper bets finished</span></li>
+      <li class="eb-check-profit">Paper trading in profit</li>
+      <li>Your Kalshi API key added (you do this yourself, never in chat)</li>
+      <li>Real-money switch turned on</li>
+    </ul>
+  </section>
+
+  <section class="eb-section eb-card" id="curve">
+    <h2>Paper profit over time</h2>
+    <p class="eb-note">Running total after each finished bet. The dashed line is break-even.</p>
+    <p class="eb-note eb-curve-empty" hidden>The line starts once the first bet's game is over.</p>
+    <div class="eb-chart dash-skeleton" data-draw="curve" data-source="curve"></div>
+  </section>
+
+  <section class="eb-section eb-card" id="open">
+    <h2>Open bets</h2>
+    <p class="eb-note eb-open-empty" hidden>No open bets. The bot only bets when a price is off by more than the fees, so quiet days are normal.</p>
+    <div class="eb-scroll">
+      <table data-source="open_bets" data-row-key="id">
+        <thead><tr>
+          <th data-field="pick">Pick</th><th data-field="game">Game</th><th data-field="kickoff_et">Kickoff (ET)</th>
+          <th data-field="money">Money</th><th data-field="status">Status</th><th class="eb-r" data-field="price">Price</th>
+          <th class="eb-r" data-field="contracts">Contracts</th><th class="eb-r" data-field="fair_chance">Fair chance</th><th class="eb-r" data-field="edge">Expected edge</th>
+        </tr></thead>
+        <tbody data-draw="openRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="eb-section eb-card" id="results">
+    <h2>Results</h2>
+    <p class="eb-note eb-results-empty" hidden>No finished games yet.</p>
+    <div class="eb-scroll">
+      <table data-source="results" data-row-key="id">
+        <thead><tr>
+          <th data-field="pick">Pick</th><th data-field="game">Game</th><th data-field="result">Result</th><th data-field="money">Money</th>
+          <th class="eb-r" data-field="paid">Paid</th><th class="eb-r" data-field="profit">Profit</th><th data-field="settled">Settled</th>
+        </tr></thead>
+        <tbody data-draw="resultRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="eb-section eb-card" id="looked">
+    <h2>What the bot looked at</h2>
+    <p class="eb-note">Best-priced markets from the last 3 days, including the ones it passed on and why. Edge is expected profit per $1 after fees at the current price.</p>
+    <p class="eb-note eb-looked-empty" hidden>Nothing priced yet. The bot needs its sportsbook odds key before it can compare prices.</p>
+    <div class="eb-scroll">
+      <table data-source="looked_at" data-row-key="id">
+        <thead><tr>
+          <th data-field="pick">Pick</th><th data-field="game">Game</th><th class="eb-r" data-field="fair_chance">Fair</th>
+          <th class="eb-r" data-field="ask">Ask</th><th class="eb-r" data-field="edge">Edge</th><th data-field="decision">Decision</th><th data-field="why">Why</th>
+        </tr></thead>
+        <tbody data-draw="lookedRows"></tbody>
+      </table>
+    </div>
+    <p class="eb-note eb-unmatched" hidden><span data-draw="unmatched" data-source="summary" data-field="unmatched_today">—</span> Kalshi games in the last day couldn't be matched to a sportsbook game with confidence, so the bot skipped them.</p>
+  </section>
+
+  <div class="eb-section eb-grid">
+    <section class="eb-card" id="rules">
+      <h2>Rules it can't break</h2>
+      <ul class="eb-rules">
+        <li>Leagues: <span data-draw="leagues" data-source="summary" data-field="leagues">—</span></li>
+        <li>At most <span data-draw="stakePct" data-source="summary" data-field="max_stake_pct">—</span> of the bankroll on one bet, and never more than <span data-draw="capUsd">—</span></li>
+        <li>Only bets when expected profit is at least <span data-draw="minEdge" data-source="summary" data-field="min_edge_pct">—</span> after fees</li>
+        <li>At most <span data-draw="perDay" data-source="summary" data-field="max_bets_per_day">—</span> bets a day, one per game, no betting once a game starts</li>
+        <li>Pauses itself if the bankroll falls to <span data-draw="stop" data-source="summary" data-field="stop_balance">—</span></li>
+      </ul>
+      <p class="eb-note" style="margin-top: var(--cds-gap-sm)">To pause, resume, change a rule or switch to real money, ask Claude in chat. Real money stays locked until every check above is done.</p>
+    </section>
+    <section class="eb-card" id="health">
+      <h2>Bot health</h2>
+      <p class="eb-note eb-credits-none">No sportsbook odds credits used yet this month.</p>
+      <p class="eb-note eb-credits-some" hidden>Sportsbook odds credits left this month: <b data-draw="credits" data-source="summary" data-field="odds_credits_left">—</b></p>
+      <div class="eb-scroll">
+        <table data-source="runs" data-row-key="id">
+          <thead><tr><th data-field="started_et">When (ET)</th><th data-field="task">Job</th><th data-field="outcome">Outcome</th><th data-field="result">Result</th></tr></thead>
+          <tbody data-draw="runRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  // Turns the Supabase connector's answer (rows wrapped in a text block) into rows.
+  const parseSupabase = ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') {
+      try { a = JSON.parse(a); } catch (e) { /* plain text */ }
+    }
+    if (Array.isArray(a)) return a;
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || 'Supabase returned an error'));
+    const text = typeof a === 'string' ? a : (a && typeof a.result === 'string' ? a.result : null);
+    if (text === null) throw new Error('Supabase answered without a result');
+    const open = text.indexOf('<untrusted-data');
+    const start = open >= 0 ? text.indexOf('>', open) + 1 : 0;
+    const close = open >= 0 ? text.indexOf('</untrusted-data', start) : -1;
+    const body = text.slice(start, close >= 0 ? close : text.length).trim();
+    let rows;
+    try { rows = JSON.parse(body); } catch (e) { throw new Error(text.slice(0, 300)); }
+    if (!Array.isArray(rows)) throw new Error('Supabase answered without rows');
+    return rows;
+  };
+  const desc = 'Supabase’s answer as rows';
+  ['summary', 'curve', 'open_bets', 'results', 'looked_at', 'runs'].forEach((id) => dash.loader(id, { description: desc, fn: parseSupabase }));
+</script>
+
+<script>
+  // Shared helpers.
+  const MAX_STAKE_USD = 20; // hard cap built into the bot's code
+  const money = (x) => (x < 0 ? '−$' : '$') + Math.abs(Number(x)).toFixed(2);
+  const signedMoney = (x) => (Number(x) > 0 ? '+' : '') + money(x);
+  const first = (id) => {
+    const d = dash.data(id);
+    return d.status === 'ok' && d.data.length ? d.data[0] : null;
+  };
+  window.ebNum = (name, id, field, fmt, signColor) => dash.draw(name, (el) => {
+    const d = dash.data(id);
+    const row = d.status === 'ok' && d.data.length ? d.data[0] : null;
+    const v = row ? row[field] : null;
+    if (d.status !== 'loading') el.classList.remove('dash-skeleton');
+    el.classList.remove('eb-pos', 'eb-neg');
+    if (v === null || v === undefined || v === '') { el.textContent = '—'; return; }
+    el.textContent = fmt ? fmt(v) : String(v);
+    if (signColor && Number(v) !== 0) el.classList.add(Number(v) > 0 ? 'eb-pos' : 'eb-neg');
+  });
+  window.ebRows = (name, id, cols) => dash.draw(name, (tbody) => {
+    const d = dash.data(id);
+    if (d.status !== 'ok') { tbody.replaceChildren(); return; }
+    tbody.replaceChildren(...d.data.map((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = String(r.id);
+      cols.forEach((c) => {
+        const td = document.createElement('td');
+        td.textContent = r[c.field] === null || r[c.field] === undefined ? '' : String(r[c.field]);
+        if (c.right) td.className = 'eb-r';
+        if (c.tone) { const t = c.tone(r); if (t) td.classList.add(t); }
+        tr.append(td);
+      });
+      return tr;
+    }));
+  });
+
+  ebNum('mode', 'summary', 'mode_label');
+  ebNum('lastRun', 'summary', 'last_run_et');
+  ebNum('pausedReason', 'summary', 'paused_reason');
+  ebNum('bankroll', 'summary', 'bankroll', money);
+  ebNum('start', 'summary', 'start_bankroll', money);
+  ebNum('profit', 'summary', 'profit', signedMoney, true);
+  ebNum('fees', 'summary', 'fees', money);
+  ebNum('won', 'summary', 'won');
+  ebNum('lost', 'summary', 'lost');
+  ebNum('openCount', 'summary', 'open_bets');
+  ebNum('roi', 'summary', 'roi_pct', (v) => (v > 0 ? '+' : '') + Number(v).toFixed(1) + '%', true);
+  ebNum('clv', 'summary', 'beat_close_cents', (v) => (v > 0 ? '+' : '') + Number(v).toFixed(1) + '¢', true);
+  ebNum('clvCount', 'summary', 'clv_count');
+  ebNum('settled', 'summary', 'settled');
+  ebNum('unlock', 'summary', 'bets_to_unlock');
+  ebNum('unmatched', 'summary', 'unmatched_today');
+  ebNum('leagues', 'summary', 'leagues');
+  ebNum('stakePct', 'summary', 'max_stake_pct', (v) => v + '%');
+  ebNum('minEdge', 'summary', 'min_edge_pct', (v) => v + '%');
+  ebNum('perDay', 'summary', 'max_bets_per_day');
+  ebNum('stop', 'summary', 'stop_balance', money);
+  ebNum('credits', 'summary', 'odds_credits_left');
+  dash.draw('capUsd', (el) => { el.textContent = money(MAX_STAKE_USD); });
+
+  ebRows('openRows', 'open_bets', [
+    { field: 'pick' }, { field: 'game' }, { field: 'kickoff_et' }, { field: 'money' }, { field: 'status' },
+    { field: 'price', right: true }, { field: 'contracts', right: true }, { field: 'fair_chance', right: true }, { field: 'edge', right: true },
+  ]);
+  ebRows('resultRows', 'results', [
+    { field: 'pick' }, { field: 'game' },
+    { field: 'result', tone: (r) => (r.result === 'Won' ? 'eb-pos' : r.result === 'Lost' ? 'eb-neg' : '') },
+    { field: 'money' }, { field: 'paid', right: true },
+    { field: 'profit', right: true, tone: (r) => (r.profit_value > 0 ? 'eb-pos' : r.profit_value < 0 ? 'eb-neg' : '') },
+    { field: 'settled' },
+  ]);
+  ebRows('lookedRows', 'looked_at', [
+    { field: 'pick' }, { field: 'game' }, { field: 'fair_chance', right: true }, { field: 'ask', right: true },
+    { field: 'edge', right: true, tone: (r) => (r.edge_value > 0 ? 'eb-pos' : r.edge_value < 0 ? 'eb-neg' : '') },
+    { field: 'decision' }, { field: 'why' },
+  ]);
+  ebRows('runRows', 'runs', [
+    { field: 'started_et' }, { field: 'task' },
+    { field: 'outcome', tone: (r) => (r.outcome === 'failed' ? 'eb-neg' : '') },
+    { field: 'result' },
+  ]);
+
+  // Show and hide whole sentences, and tick the checklist (no text written here).
+  dash.onData(() => {
+    const s = first('summary');
+    const rowsOf = (id) => { const d = dash.data(id); return d.status === 'ok' ? d.data : null; };
+    const toggle = (sel, hide) => document.querySelectorAll(sel).forEach((el) => { el.hidden = hide; });
+    toggle('.eb-paused', !(s && s.mode === 'paused'));
+    toggle('.eb-unmatched', !(s && s.unmatched_today > 0));
+    toggle('.eb-credits-none', !(s && (s.odds_credits_left === null || s.odds_credits_left === undefined)));
+    toggle('.eb-credits-some', !(s && s.odds_credits_left !== null && s.odds_credits_left !== undefined));
+    document.querySelectorAll('.eb-check-settled').forEach((el) => el.classList.toggle('eb-done', !!(s && s.settled >= s.bets_to_unlock)));
+    document.querySelectorAll('.eb-check-profit').forEach((el) => el.classList.toggle('eb-done', !!(s && s.profit > 0)));
+    const empty = (id, sel) => { const r = rowsOf(id); toggle(sel, !(r && r.length === 0)); };
+    empty('curve', '.eb-curve-empty');
+    empty('open_bets', '.eb-open-empty');
+    empty('results', '.eb-results-empty');
+    empty('looked_at', '.eb-looked-empty');
+  });
+</script>
+
+<script>
+  // The football field: finished paper bets are yards; real money can unlock at the goal line.
+  dash.draw('field', (el) => {
+    const d = dash.data('summary');
+    if (d.status === 'error') { el.classList.remove('dash-skeleton'); const f = document.createElement('div'); f.className = 'eb-fail'; f.textContent = 'Failed to load'; el.replaceChildren(f); return; }
+    if (d.status !== 'ok' || !d.data.length) { el.replaceChildren(); return; }
+    el.classList.remove('dash-skeleton');
+    const s = d.data[0];
+    const goal = Number(s.bets_to_unlock) || 50;
+    const done = Math.max(0, Math.min(Number(s.settled) || 0, goal));
+    const w = Math.max(el.clientWidth || 0, 260), h = 72, pad = 6, top = 6, fieldH = 44;
+    const x = d3.scaleLinear([0, goal], [pad, w - pad]);
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${w} ${h}`)
+      .attr('role', 'img').attr('aria-label', `${done} of ${goal} paper bets finished`);
+    svg.append('rect').attr('x', pad).attr('y', top).attr('width', w - 2 * pad).attr('height', fieldH)
+      .attr('rx', 4).attr('fill', 'var(--cds-chart-grid)').attr('fill-opacity', 0.35);
+    svg.append('rect').attr('x', pad).attr('y', top).attr('width', Math.max(0, x(done) - pad)).attr('height', fieldH)
+      .attr('rx', 4).style('fill', dash.colors[0]).attr('fill-opacity', 0.35);
+    const ticks = d3.range(0, goal + 1, goal / 5);
+    svg.append('g').selectAll('line').data(ticks).join('line')
+      .attr('x1', (t) => x(t)).attr('x2', (t) => x(t)).attr('y1', top).attr('y2', top + fieldH)
+      .attr('stroke', (t) => (t === goal ? 'var(--color-fg)' : 'var(--cds-chart-axis)'))
+      .attr('stroke-width', (t) => (t === goal ? 3 : 1));
+    svg.append('g').selectAll('text').data(ticks).join('text')
+      .attr('x', (t) => x(t)).attr('y', h - 4)
+      .attr('text-anchor', (t, i) => (i === 0 ? 'start' : i === ticks.length - 1 ? 'end' : 'middle'))
+      .attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)')
+      .text((t) => d3.format('d')(t));
+    svg.append('circle').attr('cx', x(done)).attr('cy', top + fieldH / 2).attr('r', 6).style('fill', dash.colors[0]);
+    el.replaceChildren(svg.node());
+  });
+</script>
+
+<script>
+  // Running paper profit, one point per finished bet, with a tooltip.
+  dash.draw('curve', (el) => {
+    const d = dash.data('curve');
+    if (d.status === 'error') { el.classList.remove('dash-skeleton'); const f = document.createElement('div'); f.className = 'eb-fail'; f.textContent = 'Failed to load'; el.replaceChildren(f); return; }
+    if (d.status !== 'ok') { el.replaceChildren(); return; }
+    el.classList.remove('dash-skeleton');
+    const rows = d.data.map((r) => ({ n: Number(r.bet_no), v: Number(r.total_profit) }));
+    if (!rows.length) { el.replaceChildren(); return; }
+    const pts = [{ n: 0, v: 0 }, ...rows];
+    const w = Math.max(el.clientWidth || 0, 280), h = 190;
+    const fmt = (v) => (v > 0 ? '+$' : v < 0 ? '−$' : '$') + Math.abs(v).toFixed(2);
+    const [lo, hi] = d3.extent(pts, (p) => p.v);
+    const span = Math.max(hi - lo, 0.5);
+    const y = d3.scaleLinear([Math.min(lo, 0) - span * 0.08, Math.max(hi, 0) + span * 0.08], [h - 26, 10]).nice(4);
+    const svg = d3.create('svg').attr('width', '100%').attr('viewBox', `0 0 ${w} ${h}`)
+      .attr('role', 'img').attr('aria-label', `Paper profit after ${rows.length} finished bets: ${fmt(rows[rows.length - 1].v)}`);
+    // Measure the widest y label so the plot starts after it.
+    const probe = svg.append('text').style('font-size', 'var(--cds-font-size-caption)');
+    el.replaceChildren(svg.node());
+    let left = 0;
+    y.ticks(4).forEach((t) => { probe.text(fmt(t)); left = Math.max(left, probe.node().getComputedTextLength()); });
+    probe.remove();
+    left = Math.ceil(left) + 10;
+    const x = d3.scaleLinear([0, Math.max(rows[rows.length - 1].n, 1)], [left, w - 12]);
+    svg.append('g').selectAll('line').data(y.ticks(4)).join('line')
+      .attr('x1', left).attr('x2', w - 12).attr('y1', (t) => y(t)).attr('y2', (t) => y(t)).attr('stroke', 'var(--cds-chart-grid)');
+    svg.append('g').selectAll('text').data(y.ticks(4)).join('text')
+      .attr('x', left - 8).attr('y', (t) => y(t)).attr('dy', '0.32em').attr('text-anchor', 'end')
+      .attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(fmt);
+    svg.append('line').attr('x1', left).attr('x2', w - 12).attr('y1', y(0)).attr('y2', y(0))
+      .attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 4');
+    const xt = x.ticks(Math.min(5, rows[rows.length - 1].n)).filter((t) => Number.isInteger(t));
+    svg.append('g').selectAll('text').data(xt).join('text')
+      .attr('x', (t) => x(t)).attr('y', h - 6).attr('text-anchor', 'middle')
+      .attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text((t) => (t === 0 ? 'start' : 'bet ' + t));
+    svg.append('path').datum(pts).attr('fill', 'none').style('stroke', dash.colors[0]).attr('stroke-width', 2)
+      .attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round')
+      .attr('d', d3.line().x((p) => x(p.n)).y((p) => y(p.v)));
+    const dot = svg.append('circle').attr('r', 4).style('fill', dash.colors[0]).attr('visibility', 'hidden');
+    const tip = document.createElement('div');
+    tip.className = 'eb-tip';
+    tip.hidden = true;
+    const head = document.createElement('div'); head.className = 'eb-tip-head';
+    const body = document.createElement('div');
+    tip.append(head, body);
+    el.append(tip);
+    svg.on('pointermove', (event) => {
+      const [mx] = d3.pointer(event);
+      const scale = w / (el.clientWidth || w);
+      const n = Math.round(x.invert(mx));
+      const p = pts.find((q) => q.n === Math.max(0, Math.min(n, pts[pts.length - 1].n)));
+      if (!p) return;
+      dot.attr('cx', x(p.n)).attr('cy', y(p.v)).attr('visibility', 'visible');
+      head.textContent = p.n === 0 ? 'Start' : 'After bet ' + p.n;
+      body.textContent = 'Total profit ' + fmt(p.v);
+      tip.hidden = false;
+      const px = x(p.n) / scale, py = y(p.v) / scale;
+      const tw = tip.offsetWidth, cw = el.clientWidth;
+      tip.style.left = Math.max(0, Math.min(px + 10, cw - tw)) + 'px';
+      tip.style.top = Math.max(0, py - 40) + 'px';
+    });
+    svg.on('pointerleave', () => { tip.hidden = true; dot.attr('visibility', 'hidden'); });
+  });
+</script>

@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edge Bot</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --turf: #0f3d2e;
+    --turf-2: #144a39;
+    --turf-3: #1b5a45;
+    --chalk: #eef2ea;
+    --chalk-dim: #b9c8bd;
+    --amber: #f4b942;
+    --win: #93dc9a;
+    --loss: #f08a6c;
+    --line: rgba(238, 242, 234, 0.18);
+    --radius-lg: 14px;
+    --radius-sm: 6px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --turf: #eaf1e8; --turf-2: #ffffff; --turf-3: #dbe7d8;
+      --chalk: #0f3d2e; --chalk-dim: #4d6b5c; --amber: #a06a00;
+      --win: #1f7a33; --loss: #b4442a; --line: rgba(15, 61, 46, 0.16);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--turf);
+    color: var(--chalk);
+    font: 16px/1.5 "Atkinson Hyperlegible", system-ui, sans-serif;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 64px; }
+  h1, h2, .num { font-family: "Big Shoulders Display", "Arial Narrow", sans-serif; letter-spacing: 0.01em; }
+  h1 { font-size: 28px; font-weight: 800; margin: 0; }
+  h2 { font-size: 22px; font-weight: 800; margin: 36px 0 10px; }
+  p { margin: 0 0 8px; }
+  .muted { color: var(--chalk-dim); }
+  a { color: inherit; }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .mode { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); font-weight: 700; }
+  .mode::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--chalk-dim); }
+  .mode[data-mode="paper"]::before { background: var(--win); }
+  .mode[data-mode="live"]::before { background: var(--amber); box-shadow: 0 0 0 4px rgba(244, 185, 66, 0.25); }
+  .mode[data-mode="paused"]::before { background: var(--loss); }
+
+  /* Scoreboard */
+  .board { margin-top: 18px; background: var(--turf-2); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 18px 18px 14px; }
+  .board .num.big { font-size: clamp(56px, 16vw, 88px); font-weight: 800; line-height: 0.95; color: var(--amber); font-variant-numeric: tabular-nums; }
+  .board .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .board .row .num { font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pos { color: var(--win); } .neg { color: var(--loss); }
+  .curve { width: 100%; height: 70px; margin-top: 10px; display: block; }
+
+  /* Field progress: settled bets are yards, real money unlocks at the 50 */
+  .field { position: relative; margin-top: 10px; height: 64px; border-radius: var(--radius-sm); background:
+      repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), var(--line) calc(10% - 1px) 10%), var(--turf-3);
+    overflow: hidden; }
+  .field .drive { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, rgba(244,185,66,0.15), rgba(244,185,66,0.45)); border-right: 3px solid var(--amber); transition: width 600ms ease; }
+  .field .goal { position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: var(--chalk); }
+  .field .yards { position: absolute; bottom: 4px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 4px; font-family: "Big Shoulders Display", sans-serif; font-size: 13px; color: var(--chalk-dim); }
+  .checks { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 4px; }
+  .checks li::before { content: "○ "; color: var(--chalk-dim); }
+  .checks li.ok::before { content: "● "; color: var(--win); }
+
+  /* Bet slips */
+  .slips { display: grid; gap: 10px; }
+  .slip { background: var(--turf-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; position: relative; }
+  .slip::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; border-bottom: 2px dashed var(--line); }
+  .slip .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .slip .pick { font-weight: 700; }
+  .slip .game { color: var(--chalk-dim); font-size: 14px; }
+  .slip .nums { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 6px; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .tag { font-size: 13px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
+  .tag.live { border-color: var(--amber); color: var(--amber); }
+  .tag.won { border-color: var(--win); color: var(--win); }
+  .tag.lost { border-color: var(--loss); color: var(--loss); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--chalk-dim); font-weight: 400; }
+  td.r, th.r { text-align: right; }
+  .scroll { overflow-x: auto; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  button { font: inherit; font-weight: 700; color: var(--turf); background: var(--chalk); border: 0; border-radius: var(--radius-sm); padding: 10px 16px; cursor: pointer; }
+  button.secondary { background: transparent; color: var(--chalk); border: 1px solid var(--line); }
+  button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .notice { margin-top: 16px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--loss); }
+  .empty { padding: 14px; border: 1px dashed var(--line); border-radius: var(--radius-sm); color: var(--chalk-dim); }
+  #msg { min-height: 24px; margin-top: 8px; }
+  details summary { cursor: pointer; color: var(--chalk-dim); }
+  @media (prefers-reduced-motion: reduce) { .field .drive { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Edge Bot</h1>
+    <span class="mode" id="mode" data-mode="">Loading</span>
+  </header>
+  <p class="muted" id="updated"></p>
+  <div id="error" class="notice" hidden></div>
+  <div id="paused" class="notice" hidden></div>
+
+  <section class="board" aria-label="Paper bankroll">
+    <p class="muted">Paper bankroll (fake money)</p>
+    <div class="num big" id="equity">$—</div>
+    <p class="muted" id="equitySub"></p>
+    <svg class="curve" id="curve" viewBox="0 0 300 70" preserveAspectRatio="none" aria-hidden="true"></svg>
+    <div class="row">
+      <div><div class="num" id="record">—</div><div class="muted">Won–lost</div></div>
+      <div><div class="num" id="roi">—</div><div class="muted">Return</div></div>
+      <div><div class="num" id="clv">—</div><div class="muted">Beat the close</div></div>
+    </div>
+  </section>
+  <p class="muted" style="margin-top:8px">"Beat the close" is how much lower our price was than Kalshi's price at kickoff, on average. Positive over many bets is the best early sign of a real edge. Wins and losses over a few dozen bets are mostly luck.</p>
+
+  <h2>Road to real money</h2>
+  <p>Each settled paper bet is a yard. Real money can switch on at the 50 — and only if paper trading is in profit.</p>
+  <div class="field" role="img" id="fieldLabel" aria-label="">
+    <div class="drive" id="drive" style="width:0%"></div>
+    <div class="goal"></div>
+    <div class="yards"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span></div>
+  </div>
+  <ul class="checks" id="checks"></ul>
+
+  <h2>Open bets</h2>
+  <div class="slips" id="open"></div>
+
+  <h2>Results</h2>
+  <div class="scroll"><table id="results"><thead><tr><th>Game</th><th>Pick</th><th class="r">Paid</th><th class="r">Profit</th></tr></thead><tbody></tbody></table></div>
+
+  <h2>What the bot looked at</h2>
+  <p class="muted">Best-priced markets from the last 3 days, including the ones it passed on and why.</p>
+  <div class="scroll"><table id="signals"><thead><tr><th>Pick</th><th class="r">Fair</th><th class="r">Ask</th><th class="r">Edge</th><th>Decision</th></tr></thead><tbody></tbody></table></div>
+  <p class="muted" id="unmatched"></p>
+
+  <h2>Controls</h2>
+  <p class="muted">Needs your control token (saved on this phone after the first use).</p>
+  <div class="controls">
+    <button id="btnPause">Pause bot</button>
+    <button id="btnResume" class="secondary">Resume paper trading</button>
+    <button id="btnScan" class="secondary">Scan now</button>
+    <button id="btnLive" class="secondary">Switch to real money</button>
+  </div>
+  <div id="msg" role="status" aria-live="polite"></div>
+
+  <h2>Rules it can't break</h2>
+  <ul class="checks" id="rules"></ul>
+
+  <h2>Health</h2>
+  <p id="credits"></p>
+  <details><summary>Recent runs</summary><div class="scroll"><table id="runs"><thead><tr><th>Task</th><th>When</th><th>Result</th></tr></thead><tbody></tbody></table></div></details>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const API = params.get("api") || "https://mhahkbssltukjhusjsjf.supabase.co/functions/v1/edgebot";
+const $ = (id) => document.getElementById(id);
+const money = (x) => x === null || x === undefined || isNaN(x) ? "—" : (x < 0 ? "−$" : "$") + Math.abs(Number(x)).toFixed(2);
+const signedMoney = (x) => x === null || x === undefined ? "—" : (x > 0 ? "+" : "") + money(x);
+const pct = (x, d = 1) => x === null || x === undefined ? "—" : (x * 100).toFixed(d) + "%";
+const cents = (x) => x === null || x === undefined ? "—" : Math.round(Number(x) * 100) + "¢";
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const when = (t) => t ? new Date(t).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
+const sign = (el, x) => { el.classList.toggle("pos", x > 0); el.classList.toggle("neg", x < 0); };
+
+function setText(id, v) { $(id).textContent = v; }
+
+async function load() {
+  let d;
+  try {
+    const res = await fetch(API + "?task=dashboard", { cache: "no-store" });
+    if (!res.ok) throw new Error("status " + res.status);
+    d = await res.json();
+    $("error").hidden = true;
+  } catch (e) {
+    $("error").hidden = false;
+    $("error").textContent = "Can't reach the bot right now (" + e.message + "). If you just set it up, the engine may not be deployed yet. This page refreshes every minute.";
+    return;
+  }
+
+  const modeNames = { paper: "Paper trading", live: "Real money", paused: "Paused" };
+  $("mode").dataset.mode = d.mode;
+  setText("mode", modeNames[d.mode] || d.mode);
+  setText("updated", "Updated " + when(d.generated_at) + (d.runs?.[0] ? ", last run " + when(d.runs[0].started_at) : ""));
+  $("paused").hidden = d.mode !== "paused";
+  $("paused").textContent = d.mode === "paused" ? "Paused: " + (d.paused_reason || "no reason given") + ". Nothing new will be bet until you resume." : "";
+
+  const p = d.paper;
+  setText("equity", money(p.equity));
+  setText("equitySub", "Started at " + money(p.start) + ". Profit " + signedMoney(p.pnl) + ", fees paid " + money(p.fees) + ".");
+  setText("record", p.won + "–" + p.lost);
+  const roi = $("roi"); roi.textContent = pct(p.roi); sign(roi, p.roi);
+  const clv = $("clv"); clv.textContent = p.avg_clv === null ? "—" : (p.avg_clv > 0 ? "+" : "") + (p.avg_clv * 100).toFixed(1) + "¢"; sign(clv, p.avg_clv);
+  drawCurve(d.equity_curve || [], p.start);
+
+  // Field
+  const g = d.gate, yards = Math.min(g.settled, g.min_settled);
+  $("drive").style.width = (yards / g.min_settled * 100) + "%";
+  $("fieldLabel").setAttribute("aria-label", g.settled + " of " + g.min_settled + " settled paper bets");
+  const checks = [
+    [g.settled >= g.min_settled, g.settled + " of " + g.min_settled + " paper bets settled"],
+    [g.paper_profit > 0, "Paper trading in profit (" + signedMoney(g.paper_profit) + ")"],
+    [d.live.keys_present, "Kalshi API key added"],
+    [d.live.enabled_secret, "Real-money switch turned on"],
+  ];
+  $("checks").innerHTML = checks.map(([ok, t]) => `<li class="${ok ? "ok" : ""}">${esc(t)}</li>`).join("");
+
+  // Open bets
+  const open = d.open_bets || [];
+  $("open").innerHTML = open.length ? open.map((b) => `
+    <article class="slip">
+      <div class="top"><span class="pick">${esc(b.team)}</span>
+        <span class="tag ${b.mode === "live" ? "live" : ""}">${b.mode === "live" ? "Real money" : "Paper"} · ${b.status === "resting" ? "waiting for " + cents(b.limit_price) : "filled"}</span></div>
+      <div class="game">${esc(b.label)} · ${when(b.commence_time)}</div>
+      <div class="nums">
+        <span>Fair chance ${pct(b.fair_p, 0)}</span>
+        <span>Price ${cents(b.fill_price ?? b.limit_price)}</span>
+        <span>${Number(b.contracts)} contract${Number(b.contracts) === 1 ? "" : "s"}</span>
+        <span>Expected edge ${pct(b.edge)}</span>
+        ${b.clv !== null ? `<span>Beat close by ${(b.clv * 100).toFixed(1)}¢</span>` : ""}
+      </div>
+    </article>`).join("") : `<div class="empty">No open bets. The bot only bets when a price is wrong by more than the fees, so quiet days are normal.</div>`;
+
+  // Results
+  const rows = (d.recent_bets || []).map((b) => `<tr>
+    <td>${esc(b.label)}<div class="muted">${b.mode === "live" ? "Real money · " : ""}${when(b.settled_at)}</div></td>
+    <td>${esc(b.team)} <span class="tag ${b.status}">${b.status}</span></td>
+    <td class="r">${cents(b.fill_price)}</td>
+    <td class="r ${Number(b.pnl) > 0 ? "pos" : Number(b.pnl) < 0 ? "neg" : ""}">${signedMoney(Number(b.pnl))}</td></tr>`).join("");
+  $("results").querySelector("tbody").innerHTML = rows || `<tr><td colspan="4" class="muted">No finished games yet.</td></tr>`;
+
+  // Signals
+  const decisions = { bet_taker: "Bet now", bet_resting: "Waiting order", skip: "Passed" };
+  $("signals").querySelector("tbody").innerHTML = (d.top_signals || []).map((s) => `<tr>
+    <td>${esc(s.team)}<div class="muted">${esc(s.label)}</div></td>
+    <td class="r">${pct(s.fair_p, 0)}</td><td class="r">${cents(s.ask)}</td>
+    <td class="r ${Number(s.ev_per_dollar) > 0 ? "pos" : "neg"}">${s.ev_per_dollar === null ? "—" : pct(Number(s.ev_per_dollar))}</td>
+    <td>${decisions[s.decision] || esc(s.decision)}<div class="muted">${esc(s.reason)}</div></td></tr>`).join("")
+    || `<tr><td colspan="5" class="muted">Nothing scanned yet.</td></tr>`;
+  setText("unmatched", d.unmatched_last_day ? d.unmatched_last_day + " Kalshi games in the last day couldn't be matched to a sportsbook game with confidence, so they were skipped." : "");
+
+  // Rules
+  const s = d.settings, h = s.hard_caps;
+  $("rules").innerHTML = [
+    `Leagues: ${s.leagues.join(", ")}`,
+    `At most ${pct(Math.min(s.max_stake_pct, h.MAX_STAKE_PCT), 0)} of the bankroll on one bet, never more than $${h.MAX_STAKE_USD}`,
+    `Only bets when expected profit is at least ${pct(s.min_edge, 0)} after fees`,
+    `At most ${s.max_bets_per_day} bets a day, one per game, no live betting`,
+    `Pauses itself if the bankroll falls to $${s.stop_balance}`,
+    `Never bets on long shots under ${pct(h.PROB_FLOOR, 0)} or favorites over ${pct(h.PROB_CEILING, 0)}`,
+  ].map((t) => `<li class="ok">${esc(t)}</li>`).join("");
+
+  // Health
+  const c = d.odds_credits;
+  setText("credits", !d.odds_key_present ? "Sportsbook odds key is missing — the bot can't find bets until it's added." :
+    c ? `Sportsbook odds credits left this month: ${c.remaining ?? "—"} of 500.` : "Odds credits: not used yet.");
+  $("runs").querySelector("tbody").innerHTML = (d.runs || []).map((r) => `<tr><td>${esc(r.task)}</td><td>${when(r.started_at)}</td>
+    <td>${r.ok === false ? `<span class="neg">failed</span> ${esc((r.error || "").slice(0, 120))}` : esc(summarize(r))}</td></tr>`).join("");
+}
+
+function summarize(r) {
+  const s = r.summary || {};
+  if (s.note) return s.note;
+  if (r.task === "scan") return `${s.candidates ?? 0} markets priced, ${s.placed?.paper ?? 0} paper bets${s.placed?.live ? ", " + s.placed.live + " real" : ""}`;
+  if (r.task === "tick") return `${s.filled ?? 0} filled, ${s.settled ?? 0} settled, ${s.expired ?? 0} expired`;
+  if (r.task === "report") return s.email || "";
+  return "";
+}
+
+function drawCurve(points, start) {
+  const svg = $("curve");
+  const paper = points.filter((p) => p.mode === "paper").map((p) => start + p.paper);
+  if (paper.length < 2) { svg.innerHTML = ""; return; }
+  const ys = [start, ...paper], min = Math.min(...ys), max = Math.max(...ys), span = max - min || 1;
+  const pts = ys.map((y, i) => `${(i / (ys.length - 1) * 300).toFixed(1)},${(66 - (y - min) / span * 62).toFixed(1)}`).join(" ");
+  const base = (66 - (start - min) / span * 62).toFixed(1);
+  svg.innerHTML = `<line x1="0" x2="300" y1="${base}" y2="${base}" stroke="currentColor" stroke-opacity="0.25" stroke-dasharray="3 4"/>
+    <polyline points="${pts}" fill="none" stroke="var(--amber)" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+}
+
+// Controls
+function token() {
+  let t = null;
+  try { t = localStorage.getItem("edgebot_token"); } catch {}
+  if (!t) {
+    t = prompt("Control token");
+    if (t) { try { localStorage.setItem("edgebot_token", t.trim()); } catch {} }
+  }
+  return t ? t.trim() : null;
+}
+async function control(path, body, label) {
+  const t = token();
+  if (!t) return;
+  setText("msg", label + "…");
+  try {
+    const res = await fetch(API + path, { method: "POST", headers: { "content-type": "application/json", "x-edgebot-token": t }, body: JSON.stringify(body || {}) });
+    const data = await res.json();
+    if (res.status === 401) { try { localStorage.removeItem("edgebot_token"); } catch {} setText("msg", "That control token didn't work. Try again."); return; }
+    if (data.ok === false && data.reasons) setText("msg", "Not yet: " + data.reasons.join("; ") + ".");
+    else if (data.ok === false) setText("msg", "Failed: " + (data.error || "unknown error"));
+    else setText("msg", label + " done.");
+    load();
+  } catch (e) { setText("msg", "Couldn't reach the bot: " + e.message); }
+}
+$("btnPause").onclick = () => control("?task=control", { action: "pause" }, "Pausing");
+$("btnResume").onclick = () => control("?task=control", { action: "resume_paper" }, "Resuming paper trading");
+$("btnScan").onclick = () => control("?task=scan", {}, "Scanning");
+$("btnLive").onclick = () => {
+  if (!confirm("Switch to real money? The bot will check every requirement first and refuse if any is missing.")) return;
+  control("?task=control", { action: "go_live" }, "Checking requirements");
+};
+
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

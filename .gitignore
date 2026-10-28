@@ -1,0 +1,8 @@
+node_modules/
+tests/e2e/db/node_modules/
+tests/e2e/db.log
+tests/e2e/deno.lock
+*.key
+*.pem
+.env
+.env.*
