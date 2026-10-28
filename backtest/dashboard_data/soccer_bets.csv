@@ -1,0 +1,24 @@
+id,date,league,game,pick,order,price_cents,fair_at_bet,fair_at_close,promised_edge,edge_vs_close,result,profit,odds_source
+B01,2025-05-20,Premier League,Man City vs Bournemouth,Away win,Bought now,12,0.1722,0.109,0.352,-0.1446,Lost,-106.12,Pinnacle
+B02,2025-08-17,Premier League,Man United vs Arsenal,Home win,Waiting order filled,23,0.2587,0.2528,0.1096,0.0846,Lost,-101.17,Pinnacle
+B03,2025-08-22,Premier League,West Ham vs Chelsea,Home win,Bought now,18,0.1965,0.1878,0.0322,-0.0136,Lost,-105.64,Pinnacle
+B04,2025-08-23,Premier League,Arsenal vs Leeds,Draw,Bought now,14,0.154,0.175,0.0376,0.1791,Lost,-105.98,Pinnacle
+B05,2025-09-14,Premier League,Burnley vs Liverpool,Draw,Bought now,16,0.1765,0.1699,0.0385,-0.0006,Lost,-2.04,Pinnacle
+B06,2025-09-30,La Liga,Valencia vs Oviedo,Away win,Bought now,17,0.1932,0.1764,0.0739,-0.0196,Won,307.54,Pinnacle
+B07,2025-10-03,Serie A,Verona vs Sassuolo,Away win,Waiting order filled,30,0.3315,0.2986,0.0916,-0.0167,Won,231.87,Pinnacle
+B08,2025-11-04,Championship,Birmingham vs Millwall,Away win,Bought now,20,0.2247,0.1945,0.0639,-0.0792,Lost,-105.6,Betfair exchange
+B09,2025-11-25,Championship,Stoke vs Charlton,Away win,Bought now,18,0.2016,0.2198,0.059,0.1547,Lost,-34.84,Pinnacle
+B10,2025-11-28,Ligue 1,Metz vs Rennes,Home win,Waiting order filled,22,0.2425,0.2582,0.0873,0.1578,Lost,-101.25,Pinnacle
+B11,2025-12-09,Championship,Watford vs Sheffield Weds,Away win,Bought now,16,0.1763,0.1718,0.0407,0.0143,Lost,-105.88,Pinnacle
+B12,2025-12-13,La Liga,Ath Madrid vs Valencia,Draw,Bought now,17,0.1923,0.1741,0.0683,-0.0326,Lost,-1.8,Pinnacle
+B13,2025-12-19,Bundesliga,Dortmund vs M'gladbach,Away win,Waiting order filled,16,0.1699,0.1586,0.0463,-0.0232,Lost,-101.47,Pinnacle
+B14,2026-01-20,Championship,Swansea vs Blackburn,Away win,Waiting order filled,23,0.2472,0.2066,0.0746,-0.1019,Lost,-99.82,Betfair exchange
+B15,2026-02-10,Championship,Oxford vs Norwich,Home win,Bought now,27,0.3104,0.3101,0.0893,0.088,Lost,-1.71,Betfair exchange
+B16,2026-02-10,Championship,Birmingham vs West Brom,Away win,Bought now,19,0.2106,0.184,0.0489,-0.0837,Lost,-105.61,Betfair exchange
+B17,2026-02-14,Ligue 1,Lille vs Brest,Away win,Bought now,18,0.2021,0.1601,0.062,-0.1588,Lost,-95.36,Betfair exchange
+B18,2026-02-24,Championship,Hull vs Derby,Away win,Waiting order filled,32,0.3361,0.306,0.0504,-0.0439,Lost,-99.84,Betfair exchange
+B19,2026-05-19,Premier League,Chelsea vs Tottenham,Home win,Waiting order filled,46,0.4994,0.4221,0.0755,-0.0911,Won,116.23,Betfair exchange
+B20,2026-09-15,La Liga,Alaves vs Valencia,Away win,Bought now,16,0.1746,0.1715,0.0305,0.0126,Won,519.12,Betfair exchange
+B21,2026-09-18,Ligue 1,Monaco vs Lens,Away win,Waiting order filled,24,0.2651,0.2311,0.0899,-0.0496,Lost,-101.17,Betfair exchange
+B22,2026-10-13,Championship,Birmingham vs Preston,Away win,Bought now,14,0.1601,0.1349,0.0784,-0.0909,Lost,-51.95,Betfair exchange
+B23,2026-10-24,Championship,Stoke vs Bristol City,Home win,Waiting order filled,39,0.4125,0.407,0.0577,0.0436,Lost,-99.84,Betfair exchange

@@ -13,6 +13,16 @@ A bot that compares Kalshi's football prices with what the sharpest sportsbooks 
 
 Every market it looks at, and why it bet or passed, is saved, so you can see its reasoning.
 
+## Replay test result (October 2026): no edge found
+
+Before any real money, the bot's exact decision code was replayed on past games: 2,551 soccer games since May 2025, 388 NFL and 848 college football games. Details are in `backtest/README.md`.
+
+- **Soccer:** Kalshi's price sat on average 0.74¢ from the sharp books' fair price. Only 23 bets came up, and they were worth −0.9% against the closing price.
+- **College football:** the bot's 83 bets won 24% of the time, against the 31% the sportsbooks implied, and lost money. When Kalshi disagreed with the sportsbooks, Kalshi was usually right.
+- **NFL:** too efficient to find bets (3 in two seasons).
+
+**Bottom line:** don't fund this strategy with real money as it stands. Paper trading is free and can keep running. The only untested idea is reacting within minutes of sharp-book moves, which needs minute-level odds data.
+
 ## Rules it can't break
 
 These are in the code (`supabase/functions/edgebot/lib/rules.ts`). Settings in the database can make them stricter, never looser.

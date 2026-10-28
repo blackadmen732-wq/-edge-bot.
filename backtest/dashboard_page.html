@@ -1,0 +1,399 @@
+<meta name="dash-one-writer">
+<style>
+  .rt { display: grid; gap: var(--cds-gap-xl); font-family: var(--font-anthropic-sans); max-width: 72rem; margin-inline: auto; }
+  .rt h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+  .rt h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; text-wrap: balance; }
+  .rt h3 { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); margin: 0; }
+  .rt p { margin: 0; max-width: 68ch; line-height: 1.5; }
+  .rt b { font-weight: 600; }
+  .rt .muted { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .rt-head { display: grid; gap: var(--cds-gap-sm); }
+  .rt-verdict { border-left: 3px solid var(--color-bad); padding: var(--cds-pad-sm) var(--cds-pad-md); background: var(--color-panel); border-radius: var(--cds-radius); display: grid; gap: var(--cds-gap-xs); }
+  .rt-verdict strong { color: var(--color-bad); }
+  .rt-tiles { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
+  .rt-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); display: grid; gap: var(--cds-gap-xs); align-content: start; }
+  .rt-tile .lbl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .rt-tile .num { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); font-weight: 400; font-variant-numeric: tabular-nums; min-height: 1.2em; }
+  .rt-section { display: grid; gap: var(--cds-gap-md); }
+  .rt-grid { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
+  .rt-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-sm); min-width: 0; align-content: start; }
+  .rt-chart { position: relative; min-height: 240px; }
+  .rt-chart.tall { min-height: 420px; }
+  .rt-chart svg { display: block; overflow: visible; }
+  .rt-chart text { fill: var(--color-fg-muted); font-size: var(--cds-font-size-caption); font-family: var(--font-anthropic-sans); }
+  .rt-chart .lab { fill: var(--color-fg); }
+  .rt-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); max-width: 16rem; z-index: 2; }
+  .rt-tip .t { color: var(--cds-text-secondary); }
+  .rt-table-wrap { overflow: auto; max-height: 34rem; }
+  .rt table { border-collapse: collapse; width: 100%; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  .rt th, .rt td { text-align: left; padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+  .rt th { position: sticky; top: 0; background: var(--color-panel); font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); }
+  .rt td.n, .rt th.n { text-align: right; }
+  .rt .good { color: var(--color-ok); }
+  .rt .bad { color: var(--color-bad); }
+  .rt-notes { display: grid; gap: var(--cds-gap-sm); }
+  .rt-notes ul { margin: 0; padding-left: 1.2rem; display: grid; gap: var(--cds-gap-xs); max-width: 70ch; line-height: 1.5; }
+  [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  [data-dash-source-state=empty] { color: transparent; }
+</style>
+
+<div class="rt">
+  <header class="rt-head" id="top">
+    <h1>Edge Bot replay test</h1>
+    <p>The bot's exact decision code, replayed on <b data-draw="soccerGames" data-source="settings_tried" data-field="games" data-where="id=S01">—</b> past soccer games and <b data-draw="usGames" data-source="settings_tried" data-field="games" data-where="id=U01">—</b> NFL and college football games, using only the prices it would have seen at the time.</p>
+    <div class="rt-verdict">
+      <p><strong>No edge found.</strong> Kalshi's soccer prices sat on average <b data-draw="gapAll" data-source="price_gaps" data-field="avg_gap_cents" data-where="group=All soccer">—</b> from the sharp books' fair price. The few bets the bot would have made did <b data-draw="edgeMain" data-source="settings_tried" data-field="edge_vs_close" data-where="id=S01">—</b> against the closing price, which is no better than chance.</p>
+      <p>In college football, where Kalshi disagreed with the sportsbooks more often, the bot's bets won <b data-draw="vCfbWon" data-source="settings_tried" data-field="win_rate" data-where="id=U06">—</b> of the time against the <b data-draw="vCfbExp" data-source="settings_tried" data-field="expected_win_rate" data-where="id=U06">—</b> the sportsbooks implied. Kalshi's price was usually the right one.</p>
+      <p class="muted">Don't put real money behind this strategy as it stands. Paper trading costs nothing, so it can keep running.</p>
+    </div>
+  </header>
+
+  <section class="rt-tiles" aria-label="Headline figures" id="headline">
+    <div class="rt-tile">
+      <span class="lbl">Average distance from the sharp price</span>
+      <span class="num dash-skeleton" data-draw="tGap" data-source="price_gaps" data-field="avg_gap_cents" data-where="group=All soccer">—</span>
+      <span class="muted">Kalshi's mid price vs Pinnacle or Betfair, soccer</span>
+    </div>
+    <div class="rt-tile">
+      <span class="lbl">Markets worth buying straight away</span>
+      <span class="num dash-skeleton" data-draw="tShare" data-source="price_gaps" data-field="share_over_3pct" data-where="group=All soccer">—</span>
+      <span class="muted">Cleared the bot's 3% bar after Kalshi's fee</span>
+    </div>
+    <div class="rt-tile">
+      <span class="lbl">Bets the bot would have placed</span>
+      <span class="num dash-skeleton" data-draw="tBets" data-source="settings_tried" data-field="bets" data-where="id=S01">—</span>
+      <span class="muted">Across every soccer game replayed</span>
+    </div>
+    <div class="rt-tile">
+      <span class="lbl">Edge against the closing price</span>
+      <span class="num dash-skeleton" data-draw="tEdge" data-source="settings_tried" data-field="edge_vs_close" data-where="id=S01">—</span>
+      <span class="muted">95% range <span data-draw="tEdgeLo" data-source="settings_tried" data-field="ci_low" data-where="id=S01">—</span> to <span data-draw="tEdgeHi" data-source="settings_tried" data-field="ci_high" data-where="id=S01">—</span></span>
+    </div>
+    <div class="rt-tile">
+      <span class="lbl">$20 paper bankroll at the end</span>
+      <span class="num dash-skeleton" data-draw="tBank" data-source="bankroll" data-field="final" data-where="sport=Soccer&amp;start=20">—</span>
+      <span class="muted">Real rules, real fees, compounding</span>
+    </div>
+  </section>
+
+  <section class="rt-section" id="gaps">
+    <h2>Kalshi was almost always priced like the sharp books</h2>
+    <div class="rt-grid">
+      <div class="rt-card">
+        <h3>Average gap by month, soccer</h3>
+        <p class="muted">Cents between Kalshi's mid price and the sharp fair price, 2 hours after the sharp odds were taken. The bot needs gaps of several cents to profit after fees.</p>
+        <div class="rt-chart dash-skeleton" id="chart-month" data-draw="month" data-source="gap_by_month"></div>
+      </div>
+      <div class="rt-card">
+        <h3>Share of markets worth buying, by league</h3>
+        <p class="muted">Markets where buying at Kalshi's asking price cleared 3% expected profit after the fee. American football rows compare with the closing line using hindsight, so they're an upper bound.</p>
+        <div class="rt-chart dash-skeleton" id="chart-league" data-draw="league" data-source="price_gaps"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rt-section" id="bets">
+    <h2>The bets it found didn't hold up</h2>
+    <div class="rt-card">
+      <h3>Promised edge vs what the closing price said, each soccer bet</h3>
+      <p class="muted">Left dot: the edge the bot thought it had when it bet. Right dot: the same bet measured against the sharp closing price, the best estimate of the true chance. Most "edges" shrank or went negative.</p>
+      <div class="rt-chart tall dash-skeleton" id="chart-bets" data-draw="dumbbell" data-source="soccer_bets"></div>
+    </div>
+    <div class="rt-card">
+      <h3>All <span data-draw="betCount" data-source="settings_tried" data-field="bets" data-where="id=S01">—</span> soccer bets</h3>
+      <div class="rt-table-wrap">
+        <table data-source="soccer_bets" data-row-key="id">
+          <thead><tr>
+            <th data-field="date">Date</th><th data-field="league">League</th><th data-field="game">Game</th><th data-field="pick">Pick</th>
+            <th data-field="order">Order</th><th class="n" data-field="price_cents">Price</th><th class="n" data-field="promised_edge">Promised</th>
+            <th class="n" data-field="edge_vs_close">Vs close</th><th data-field="result">Result</th><th class="n" data-field="profit">Profit ($100 bets)</th>
+          </tr></thead>
+          <tbody data-draw="betRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="rt-section" id="settings">
+    <h2>No setting we tried found an edge</h2>
+    <div class="rt-card">
+      <h3>Edge against the closing price, with its 95% range, soccer</h3>
+      <p class="muted">Right of zero would mean a real edge. Every range crosses zero or sits left of it. Settings with fewer than 10 bets have no range. American football can't be scored this way, because its bets were placed using the closing price.</p>
+      <div class="rt-chart tall dash-skeleton" id="chart-forest" data-draw="forest" data-source="settings_tried"></div>
+    </div>
+    <div class="rt-card">
+      <h3>Every setting, side by side</h3>
+      <p class="muted">Flat $100 per bet so results compare fairly. Profit over so few bets is mostly luck; for soccer, the closing-price column is the one to trust. "Kalshi moved" is how far Kalshi's own price moved toward the bet by kickoff.</p>
+      <div class="rt-table-wrap">
+        <table data-source="settings_tried" data-row-key="id">
+          <thead><tr>
+            <th data-field="sport">Sport</th><th data-field="setting">Setting</th><th class="n" data-field="bets">Bets</th><th class="n" data-field="win_rate">Won</th>
+            <th class="n" data-field="expected_win_rate">Expected</th><th class="n" data-field="profit">Profit</th><th class="n" data-field="roi">Return</th><th class="n" data-field="edge_vs_close">Vs close</th>
+            <th class="n" data-field="beat_kalshi_close_cents">Kalshi moved</th>
+          </tr></thead>
+          <tbody data-draw="settingRows"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="rt-card">
+      <h3>The real bot with a small bankroll</h3>
+      <p class="muted">Same rules, Kalshi's real fee rounding, compounding. Small bankrolls skip most bets because the fee rounds up to the next cent on every order.</p>
+      <div class="rt-table-wrap">
+        <table data-source="bankroll" data-row-key="id">
+          <thead><tr><th data-field="sport">Sport</th><th class="n" data-field="start">Start</th><th class="n" data-field="bets">Bets</th><th class="n" data-field="final">End</th><th class="n" data-field="profit">Change</th></tr></thead>
+          <tbody data-draw="bankRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="rt-section" id="us">
+    <h2>American football: when Kalshi looked cheap, it was usually right</h2>
+    <p class="muted">The bot compared Kalshi 1 hour before kickoff with the sportsbooks' closing price. That's an hour of hindsight in the bot's favour, and the bets still lost.</p>
+    <div class="rt-tiles">
+      <div class="rt-tile">
+        <span class="lbl">College football bets</span>
+        <span class="num dash-skeleton" data-draw="uBets" data-source="settings_tried" data-field="bets" data-where="id=U06">—</span>
+        <span class="muted">Out of <span data-draw="uGames" data-source="settings_tried" data-field="games" data-where="id=U06">—</span> games in the 2025 season</span>
+      </div>
+      <div class="rt-tile">
+        <span class="lbl">Bets that won</span>
+        <span class="num dash-skeleton" data-draw="uWon" data-source="settings_tried" data-field="win_rate" data-where="id=U06">—</span>
+        <span class="muted">Sportsbooks implied <span data-draw="uExp" data-source="settings_tried" data-field="expected_win_rate" data-where="id=U06">—</span></span>
+      </div>
+      <div class="rt-tile">
+        <span class="lbl">Profit at $100 a bet</span>
+        <span class="num dash-skeleton" data-draw="uProfit" data-source="settings_tried" data-field="profit" data-where="id=U06">—</span>
+        <span class="muted">Return <span data-draw="uRoi" data-source="settings_tried" data-field="roi" data-where="id=U06">—</span> on <span data-draw="uStaked" data-source="settings_tried" data-field="staked" data-where="id=U06">—</span> staked</span>
+      </div>
+      <div class="rt-tile">
+        <span class="lbl">NFL average gap</span>
+        <span class="num dash-skeleton" data-draw="uNflGap" data-source="price_gaps" data-field="avg_gap_cents" data-where="group=NFL">—</span>
+        <span class="muted">Only <span data-draw="uNflBets" data-source="settings_tried" data-field="bets" data-where="id=U05">—</span> bets across <span data-draw="uNflGames" data-source="settings_tried" data-field="games" data-where="id=U05">—</span> games</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="rt-section rt-notes" id="method">
+    <h2>How the test worked</h2>
+    <ul>
+      <li>Kalshi's hourly price history for every settled game since May 2025, matched to the real result. Kalshi's settlement agreed with the final score in every matched game.</li>
+      <li>Soccer fair prices: Pinnacle where available, the Betfair exchange otherwise, taken on the Friday or Tuesday afternoon before each game. The bot bet 2 hours later, at Kalshi's asking price at that moment.</li>
+      <li>The bot's own code made every decision: the fee, the 3% bar, the sizing and the waiting orders. Waiting orders only filled if Kalshi's price later dropped below them.</li>
+      <li>NFL used the average closing price of about 20 US sportsbooks, and college football the closing price of 3, with the bot betting 1 hour before kickoff. That peeks at an hour of news, so those results flatter the bot.</li>
+      <li>A separate agent audited the test. It confirmed the price-gap numbers independently and found a bad odds row, missing size limits and a pricing flaw in the live bot. All three are fixed here, and the live bot now uses the fixed pricing.</li>
+      <li>Not tested: price moves shorter than an hour. If an edge exists, it's in the minutes after the sharp books move. Testing that needs minute-by-minute sportsbook odds, a paid data plan.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const N = (x) => (x === null || x === undefined || x === '' ? NaN : Number(x));
+  const fmt = {
+    cents: (x) => Number.isFinite(x) ? `${x.toFixed(2)}¢` : '—',
+    pct: (x) => Number.isFinite(x) ? d3.format('.1%')(x) : '—',
+    spct: (x) => Number.isFinite(x) ? d3.format('+.1%')(x).replace('-', '−') : '—',
+    money: (x) => Number.isFinite(x) ? `${x < 0 ? '−' : ''}$${d3.format(',.2f')(Math.abs(x))}` : '—',
+    smoney: (x) => Number.isFinite(x) ? `${x < 0 ? '−' : '+'}$${d3.format(',.2f')(Math.abs(x))}` : '—',
+    int: (x) => Number.isFinite(x) ? d3.format(',')(x) : '—',
+  };
+  const row = (id, where) => { const d = dash.data(id); if (d.status !== 'ok') return null; return d.data.find(where) || null; };
+  const done = (el, ok) => { if (ok) el.classList.remove('dash-skeleton'); };
+  const failed = (id) => ['error'].includes(dash.data(id).status);
+
+  // One value from one row.
+  const cell = (name, id, where, field, f) => dash.draw(name, (el) => {
+    const r = row(id, where);
+    el.textContent = r ? f(N(r[field])) : '—';
+    done(el, !!r || failed(id));
+  });
+  cell('soccerGames', 'settings_tried', (r) => r.id === 'S01', 'games', fmt.int);
+  cell('usGames', 'settings_tried', (r) => r.id === 'U01', 'games', fmt.int);
+  cell('gapAll', 'price_gaps', (r) => r.group === 'All soccer', 'avg_gap_cents', fmt.cents);
+  cell('edgeMain', 'settings_tried', (r) => r.id === 'S01', 'edge_vs_close', fmt.spct);
+  cell('tGap', 'price_gaps', (r) => r.group === 'All soccer', 'avg_gap_cents', fmt.cents);
+  cell('tShare', 'price_gaps', (r) => r.group === 'All soccer', 'share_over_3pct', fmt.pct);
+  cell('tBets', 'settings_tried', (r) => r.id === 'S01', 'bets', fmt.int);
+  cell('tEdge', 'settings_tried', (r) => r.id === 'S01', 'edge_vs_close', fmt.spct);
+  cell('tEdgeLo', 'settings_tried', (r) => r.id === 'S01', 'ci_low', fmt.spct);
+  cell('tEdgeHi', 'settings_tried', (r) => r.id === 'S01', 'ci_high', fmt.spct);
+  cell('tBank', 'bankroll', (r) => r.sport === 'Soccer' && N(r.start) === 20, 'final', fmt.money);
+  cell('betCount', 'settings_tried', (r) => r.id === 'S01', 'bets', fmt.int);
+  const U = (id) => (r) => r.id === id;
+  cell('vCfbWon', 'settings_tried', U('U06'), 'win_rate', fmt.pct);
+  cell('vCfbExp', 'settings_tried', U('U06'), 'expected_win_rate', fmt.pct);
+  cell('uBets', 'settings_tried', U('U06'), 'bets', fmt.int);
+  cell('uGames', 'settings_tried', U('U06'), 'games', fmt.int);
+  cell('uWon', 'settings_tried', U('U06'), 'win_rate', fmt.pct);
+  cell('uExp', 'settings_tried', U('U06'), 'expected_win_rate', fmt.pct);
+  cell('uProfit', 'settings_tried', U('U06'), 'profit', fmt.smoney);
+  cell('uRoi', 'settings_tried', U('U06'), 'roi', fmt.spct);
+  cell('uStaked', 'settings_tried', U('U06'), 'staked', fmt.money);
+  cell('uNflGap', 'price_gaps', (r) => r.group === 'NFL', 'avg_gap_cents', fmt.cents);
+  cell('uNflBets', 'settings_tried', U('U05'), 'bets', fmt.int);
+  cell('uNflGames', 'settings_tried', U('U05'), 'games', fmt.int);
+
+  // Shared helpers for charts.
+  const tipFor = (el) => { const t = document.createElement('div'); t.className = 'rt-tip'; t.hidden = true; el.appendChild(t); return t; };
+  const showTip = (el, tip, ev, lines) => {
+    tip.replaceChildren(...lines.map(([cls, text]) => { const d = document.createElement('div'); if (cls) d.className = cls; d.textContent = text; return d; }));
+    tip.hidden = false;
+    const box = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    let x = ev.clientX - box.left + 12, y = ev.clientY - box.top - h - 8;
+    if (x + w > box.width) x = Math.max(0, ev.clientX - box.left - w - 12);
+    if (y < 0) y = ev.clientY - box.top + 12;
+    tip.style.left = `${x}px`; tip.style.top = `${y}px`;
+  };
+  const widest = (svg, texts) => {
+    const t = svg.append('text').attr('opacity', 0);
+    let w = 0; for (const s of texts) { t.text(s); w = Math.max(w, t.node().getComputedTextLength()); }
+    t.remove(); return w;
+  };
+  const css = (v) => `var(${v})`;
+  const muted = css('--cds-chart-muted');
+
+  // Monthly average gap (bars).
+  dash.draw('month', (el) => {
+    const d = dash.data('gap_by_month');
+    el.replaceChildren();
+    if (d.status !== 'ok') { done(el, failed('gap_by_month')); return; }
+    done(el, true);
+    const rows = d.data.map((r) => ({ m: new Date(r.month), gap: N(r.avg_gap_cents), n: N(r.markets), s3: N(r.share_over_3pct) }));
+    const W = el.clientWidth || 600, H = 240;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const yMax = Math.max(1.2, d3.max(rows, (r) => r.gap) * 1.15);
+    const y = d3.scaleLinear([0, yMax], [H - 28, 12]).nice();
+    const ml = widest(svg, y.ticks(4).map((t) => `${t.toFixed(1)}¢`)) + 10;
+    const x = d3.scaleBand(rows.map((r) => r.m), [ml, W - 4]).padding(0.25);
+    svg.append('g').selectAll('line').data(y.ticks(4)).join('line').attr('x1', ml).attr('x2', W - 4).attr('y1', y).attr('y2', y).style('stroke', css('--cds-chart-grid'));
+    svg.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', ml - 6).attr('y', y).attr('dy', '0.32em').attr('text-anchor', 'end').text((t) => `${t.toFixed(1)}¢`);
+    const every = Math.ceil(rows.length / Math.max(2, Math.floor((W - ml) / 56)));
+    svg.append('g').selectAll('text').data(rows.filter((_, i) => i % every === 0)).join('text')
+      .attr('x', (r) => x(r.m) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').text((r) => d3.utcFormat("%b '%y")(r.m));
+    const tip = tipFor(el);
+    svg.append('g').selectAll('rect').data(rows).join('rect')
+      .attr('x', (r) => x(r.m)).attr('width', x.bandwidth()).attr('y', (r) => y(r.gap)).attr('height', (r) => y(0) - y(r.gap))
+      .attr('rx', 3).style('fill', dash.colors[0])
+      .on('pointermove', (ev, r) => showTip(el, tip, ev, [['t', d3.utcFormat('%B %Y')(r.m)], ['', `Average gap ${fmt.cents(r.gap)}`], ['', `Worth buying: ${fmt.pct(r.s3)} of ${fmt.int(r.n)} markets`]]))
+      .on('pointerleave', () => { tip.hidden = true; });
+  });
+
+  // Share of markets worth buying, by league (horizontal bars).
+  dash.draw('league', (el) => {
+    const d = dash.data('price_gaps');
+    el.replaceChildren();
+    if (d.status !== 'ok') { done(el, failed('price_gaps')); return; }
+    done(el, true);
+    const rows = d.data.map((r) => ({ g: r.group, sport: r.sport, s3: N(r.share_over_3pct), gap: N(r.avg_gap_cents), n: N(r.markets), all: r.group.startsWith('All ') }))
+      .sort((a, b) => (a.sport === b.sport ? (a.all ? -1 : b.all ? 1 : b.s3 - a.s3) : a.sport === 'Soccer' ? -1 : 1));
+    const W = el.clientWidth || 600, rowH = 24, H = rows.length * rowH + 24;
+    el.style.minHeight = `${H}px`;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const ml = widest(svg, rows.map((r) => r.g)) + 12;
+    const valW = widest(svg, rows.map((r) => fmt.pct(r.s3))) + 8;
+    const x = d3.scaleLinear([0, Math.max(0.05, d3.max(rows, (r) => r.s3))], [ml, W - valW]);
+    const y = (i) => 4 + i * rowH;
+    svg.append('line').attr('x1', ml).attr('x2', ml).attr('y1', 0).attr('y2', H - 20).style('stroke', css('--cds-chart-axis'));
+    const tip = tipFor(el);
+    const g = svg.append('g').selectAll('g').data(rows).join('g');
+    g.append('text').attr('class', (r) => (r.all ? 'lab' : null)).attr('x', ml - 8).attr('y', (_, i) => y(i) + rowH / 2 - 2).attr('dy', '0.32em').attr('text-anchor', 'end').text((r) => r.g);
+    g.append('rect').attr('x', ml).attr('y', (_, i) => y(i) + 3).attr('height', rowH - 10).attr('width', (r) => Math.max(1, x(r.s3) - ml)).attr('rx', 3)
+      .style('fill', (r) => (r.sport === 'Soccer' ? dash.colors[0] : muted))
+      .on('pointermove', (ev, r) => showTip(el, tip, ev, [['t', r.g], ['', `Worth buying: ${fmt.pct(r.s3)}`], ['', `Average gap ${fmt.cents(r.gap)}`], ['', `${fmt.int(r.n)} markets`]]))
+      .on('pointerleave', () => { tip.hidden = true; });
+    g.append('text').attr('class', 'lab').attr('x', (r) => Math.max(ml + 1, x(r.s3)) + 6).attr('y', (_, i) => y(i) + rowH / 2 - 2).attr('dy', '0.32em').text((r) => fmt.pct(r.s3));
+    svg.append('text').attr('x', ml).attr('y', H - 4).text('Grey: American football, measured with hindsight');
+  });
+
+  // Dumbbell: promised edge -> edge against the close, per bet.
+  dash.draw('dumbbell', (el) => {
+    const d = dash.data('soccer_bets');
+    el.replaceChildren();
+    if (d.status !== 'ok') { done(el, failed('soccer_bets')); return; }
+    done(el, true);
+    const rows = d.data.map((r) => ({ id: r.id, label: `${r.date.slice(5)} ${r.game}`, game: r.game, pick: r.pick, p: N(r.promised_edge), c: N(r.edge_vs_close), res: r.result }))
+      .sort((a, b) => a.c - b.c);
+    const W = el.clientWidth || 700, rowH = 18, H = rows.length * rowH + 36;
+    el.style.minHeight = `${H}px`;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const narrow = W < 520;
+    const ml = narrow ? 8 : Math.min(widest(svg, rows.map((r) => r.label)) + 12, W * 0.45);
+    const lo = Math.min(-0.1, d3.min(rows, (r) => Math.min(r.p, r.c))), hi = Math.max(0.15, d3.max(rows, (r) => Math.max(r.p, r.c)));
+    const x = d3.scaleLinear([lo, hi], [ml, W - 8]).nice();
+    const y = (i) => 6 + i * rowH + rowH / 2;
+    svg.append('g').selectAll('line').data(x.ticks(5)).join('line').attr('x1', x).attr('x2', x).attr('y1', 0).attr('y2', H - 24).style('stroke', (t) => (t === 0 ? css('--cds-chart-reference') : css('--cds-chart-grid')));
+    svg.append('g').selectAll('text').data(x.ticks(5)).join('text').attr('x', x).attr('y', H - 8).attr('text-anchor', 'middle').text((t) => d3.format('+.0%')(t).replace('-', '−'));
+    if (!narrow) svg.append('g').selectAll('text').data(rows).join('text').attr('x', ml - 8).attr('y', (_, i) => y(i)).attr('dy', '0.32em').attr('text-anchor', 'end').text((r) => r.label);
+    const tip = tipFor(el);
+    const g = svg.append('g').selectAll('g').data(rows).join('g')
+      .on('pointermove', (ev, r) => showTip(el, tip, ev, [['t', r.game], ['', `${r.pick} · ${r.res}`], ['', `Promised ${fmt.spct(r.p)}`], ['', `Vs closing price ${fmt.spct(r.c)}`]]))
+      .on('pointerleave', () => { tip.hidden = true; });
+    g.append('rect').attr('x', ml).attr('width', W - ml).attr('y', (_, i) => y(i) - rowH / 2).attr('height', rowH).style('fill', 'transparent');
+    g.append('line').attr('x1', (r) => x(r.p)).attr('x2', (r) => x(r.c)).attr('y1', (_, i) => y(i)).attr('y2', (_, i) => y(i)).style('stroke', muted).attr('stroke-width', 2).attr('stroke-linecap', 'round');
+    g.append('circle').attr('cx', (r) => x(r.p)).attr('cy', (_, i) => y(i)).attr('r', 4).style('fill', muted);
+    g.append('circle').attr('cx', (r) => x(r.c)).attr('cy', (_, i) => y(i)).attr('r', 4.5).style('fill', (r) => (r.c > 0 ? dash.colors[0] : css('--cds-chart-status-critical')));
+  });
+
+  // Forest plot: edge vs close with 95% range for each setting.
+  dash.draw('forest', (el) => {
+    const d = dash.data('settings_tried');
+    el.replaceChildren();
+    if (d.status !== 'ok') { done(el, failed('settings_tried')); return; }
+    done(el, true);
+    const rows = d.data.filter((r) => N(r.bets) > 0 && Number.isFinite(N(r.edge_vs_close))).map((r, i) => ({ id: r.id, s: r.setting, sport: r.sport, e: N(r.edge_vs_close), lo: N(r.ci_low), hi: N(r.ci_high), n: N(r.bets) }));
+    const W = el.clientWidth || 700, rowH = 22, H = rows.length * rowH + 36;
+    el.style.minHeight = `${H}px`;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const ml = Math.min(widest(svg, rows.map((r) => r.s)) + 12, W * 0.5);
+    const ext = d3.extent(rows.flatMap((r) => [r.e, r.lo, r.hi]).filter(Number.isFinite));
+    const x = d3.scaleLinear([Math.min(-0.05, ext[0]), Math.max(0.05, ext[1])], [ml, W - 8]).nice();
+    const y = (i) => 6 + i * rowH + rowH / 2;
+    svg.append('g').selectAll('line').data(x.ticks(5)).join('line').attr('x1', x).attr('x2', x).attr('y1', 0).attr('y2', H - 24).style('stroke', (t) => (t === 0 ? css('--cds-chart-reference') : css('--cds-chart-grid')));
+    svg.append('g').selectAll('text').data(x.ticks(5)).join('text').attr('x', x).attr('y', H - 8).attr('text-anchor', 'middle').text((t) => d3.format('+.0%')(t).replace('-', '−'));
+    svg.append('g').selectAll('text').data(rows).join('text').attr('x', ml - 8).attr('y', (_, i) => y(i)).attr('dy', '0.32em').attr('text-anchor', 'end').text((r) => r.s);
+    const tip = tipFor(el);
+    const g = svg.append('g').selectAll('g').data(rows).join('g')
+      .on('pointermove', (ev, r) => showTip(el, tip, ev, [['t', r.s], ['', `${fmt.int(r.n)} bets`], ['', `Vs closing price ${fmt.spct(r.e)}`], ['', Number.isFinite(r.lo) ? `95% range ${fmt.spct(r.lo)} to ${fmt.spct(r.hi)}` : 'Too few bets for a range']]))
+      .on('pointerleave', () => { tip.hidden = true; });
+    g.append('rect').attr('x', ml).attr('width', W - ml).attr('y', (_, i) => y(i) - rowH / 2).attr('height', rowH).style('fill', 'transparent');
+    rows.forEach((r, i) => { r.i = i; });
+    g.filter((r) => Number.isFinite(r.lo)).append('line').attr('x1', (r) => x(r.lo)).attr('x2', (r) => x(r.hi)).attr('y1', (r) => y(r.i)).attr('y2', (r) => y(r.i))
+      .style('stroke', (r) => (r.sport === 'Soccer' ? dash.colors[0] : muted)).attr('stroke-width', 2).attr('stroke-linecap', 'round');
+    g.append('circle').attr('cx', (r) => x(r.e)).attr('cy', (_, i) => y(i)).attr('r', 4.5).style('fill', (r) => (r.sport === 'Soccer' ? dash.colors[0] : muted));
+  });
+
+  // Tables.
+  const fillTable = (name, id, cols) => dash.draw(name, (tb) => {
+    const d = dash.data(id);
+    tb.replaceChildren();
+    if (d.status !== 'ok') return;
+    for (const r of d.data) {
+      const tr = document.createElement('tr');
+      tr.dataset.key = r.id;
+      for (const [field, f, cls] of cols) {
+        const td = document.createElement('td');
+        const v = f ? f(r[field], r) : r[field];
+        td.textContent = v;
+        if (cls) td.className = typeof cls === 'function' ? cls(r[field]) : cls;
+        tr.appendChild(td);
+      }
+      tb.appendChild(tr);
+    }
+  });
+  const sign = (v) => `n ${N(v) > 0 ? 'good' : N(v) < 0 ? 'bad' : ''}`;
+  fillTable('betRows', 'soccer_bets', [
+    ['date'], ['league'], ['game'], ['pick'], ['order'],
+    ['price_cents', (v) => `${v}¢`, 'n'], ['promised_edge', (v) => fmt.spct(N(v)), 'n'], ['edge_vs_close', (v) => fmt.spct(N(v)), sign],
+    ['result'], ['profit', (v) => fmt.smoney(N(v)), sign],
+  ]);
+  fillTable('settingRows', 'settings_tried', [
+    ['sport'], ['setting'], ['bets', (v) => fmt.int(N(v)), 'n'], ['win_rate', (v) => fmt.pct(N(v)), 'n'], ['expected_win_rate', (v) => fmt.pct(N(v)), 'n'],
+    ['profit', (v) => fmt.smoney(N(v)), sign], ['roi', (v) => fmt.spct(N(v)), sign], ['edge_vs_close', (v) => fmt.spct(N(v)), sign],
+    ['beat_kalshi_close_cents', (v) => (Number.isFinite(N(v)) ? `${N(v) > 0 ? '+' : N(v) < 0 ? '−' : ''}${Math.abs(N(v)).toFixed(2)}¢` : '—'), sign],
+  ]);
+  fillTable('bankRows', 'bankroll', [
+    ['sport'], ['start', (v) => fmt.money(N(v)), 'n'], ['bets', (v) => fmt.int(N(v)), 'n'], ['final', (v) => fmt.money(N(v)), 'n'], ['profit', (v) => fmt.smoney(N(v)), sign],
+  ]);
+})();
+</script>
