@@ -11,7 +11,7 @@ import { decide } from "../supabase/functions/edgebot/lib/decide.ts";
 import { effectiveSettings, HARD } from "../supabase/functions/edgebot/lib/rules.ts";
 import type { Settings } from "../supabase/functions/edgebot/lib/rules.ts";
 import { matchGame, nameScore, normalize, isTieLabel } from "../supabase/functions/edgebot/lib/match.ts";
-import { fairLine } from "../supabase/functions/edgebot/lib/odds.ts";
+import { fairLine, fetchOdds, redactSecrets } from "../supabase/functions/edgebot/lib/odds.ts";
 import { importKalshiKey, signRequest } from "../supabase/functions/edgebot/lib/kalshi.ts";
 import { aiFromEnv, explain } from "../supabase/functions/edgebot/lib/ai.ts";
 
@@ -119,6 +119,49 @@ test("settings cannot loosen hard caps", () => {
   assert.equal(loose.min_prob, HARD.PROB_FLOOR);
   assert.equal(loose.kelly_fraction, 0.5);
   assert.deepEqual(baseSettings.leagues, ["ncaaf", "nfl", "epl"], "unknown leagues dropped");
+});
+
+test("blank or garbage settings fall back to the strictest limit (never switch a rule off)", () => {
+  const junk = effectiveSettings({
+    ...baseSettings, stop_balance: NaN, max_bets_per_day: "lots" as any, min_prob: null as any, max_prob: undefined as any,
+    min_edge: "" as any, max_stake_pct: NaN, max_open_exposure_pct: "x" as any, kelly_fraction: NaN,
+  });
+  for (const [k, v] of Object.entries(junk)) if (typeof v === "number") assert.ok(Number.isFinite(v), `${k} is ${v}`);
+  assert.equal(junk.stop_balance, HARD.STOP_BALANCE_FLOOR);
+  assert.equal(junk.min_prob, HARD.PROB_FLOOR);
+  assert.equal(junk.max_prob, HARD.PROB_CEILING);
+  assert.equal(junk.min_edge, HARD.MIN_EDGE_FLOOR);
+  assert.equal(junk.max_bets_per_day, 0, "unknown daily limit means no bets");
+  assert.equal(junk.max_stake_pct, 0, "unknown stake size means no bets");
+  // The long-shot filter still works with garbage settings.
+  assert.equal(decide(0.05, { yesBid: 0.01, yesAsk: 0.02, askSize: 100 }, junk, { equity: 20, cash: 20, openExposure: 0 }, { feeType: "quadratic_with_maker_fees", feeMultiplier: 1 }).action, "skip");
+  // Negative numbers can't sneak past either.
+  const neg = effectiveSettings({ ...baseSettings, max_bets_per_day: -5, max_stake_pct: -1 });
+  assert.equal(neg.max_bets_per_day, 0);
+  assert.equal(neg.max_stake_pct, 0);
+});
+
+test("API keys are hidden from error messages shown on the dashboard", () => {
+  const msg = "error sending request for url (https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey=abc123secret&markets=h2h): connection reset";
+  const out = redactSecrets(msg);
+  assert.ok(!out.includes("abc123secret"), out);
+  assert.ok(out.includes("apiKey=[hidden]&markets=h2h"), out);
+  assert.ok(!redactSecrets("Authorization: Bearer sk-ant-api03-ZZZZZZZZZZZZ").includes("ZZZZ"));
+  assert.ok(!redactSecrets("bad key re_AbCdEfGhIjKlMnOpQrSt").includes("AbCdEf"));
+  assert.equal(redactSecrets("Odds API soccer_epl -> 429: quota"), "Odds API soccer_epl -> 429: quota", "ordinary text untouched");
+});
+
+test("fetchOdds never leaks the key when the network fails", async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (u: any) => { throw new TypeError(`error sending request for url (${String(u)})`); }) as any;
+  try {
+    await assert.rejects(fetchOdds("k3y-SECRET-value", "americanfootball_nfl", new Date().toISOString(), new Date().toISOString()), (e: Error) => {
+      assert.ok(!e.message.includes("k3y-SECRET-value"), e.message);
+      return true;
+    });
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });
 
 // ---------------- decisions

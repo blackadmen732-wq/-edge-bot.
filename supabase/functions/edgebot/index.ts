@@ -19,7 +19,7 @@ import { getMarket, getOpenEvents, getSeries, KalshiTrader, listSportsSeries } f
 import type { KalshiEvent, KalshiMarket } from "./lib/kalshi.ts";
 import { aiFromEnv, explain, REPORT_SYSTEM } from "./lib/ai.ts";
 import { isTieLabel, matchGame } from "./lib/match.ts";
-import { fairLine, fetchOdds } from "./lib/odds.ts";
+import { fairLine, fetchOdds, redactSecrets } from "./lib/odds.ts";
 import { DEFAULT_FEE, dollars, kalshiFee, validPrice } from "./lib/pricing.ts";
 import type { FeeInfo } from "./lib/pricing.ts";
 import { effectiveSettings, HARD, LEAGUES } from "./lib/rules.ts";
@@ -67,7 +67,7 @@ async function startRun(task: string): Promise<number> {
 }
 
 async function finishRun(id: number, ok: boolean, summary: unknown, error?: string) {
-  await sql`update edgebot.runs set finished_at = now(), ok = ${ok}, summary = ${sql.json(summary as any)}, error = ${error ?? null} where id = ${id}`;
+  await sql`update edgebot.runs set finished_at = now(), ok = ${ok}, summary = ${sql.json(summary as any)}, error = ${error === undefined ? null : redactSecrets(error)} where id = ${id}`;
 }
 
 async function feeInfo(series: string): Promise<FeeInfo> {
@@ -315,7 +315,7 @@ async function scan(runId: number) {
       }
       ls.matched = matched;
     } catch (e) {
-      ls.error = (e as Error).message.slice(0, 300);
+      ls.error = redactSecrets((e as Error).message).slice(0, 300);
     }
   }
 
@@ -342,6 +342,14 @@ async function scan(runId: number) {
       if (mode === "paper") {
         bank = await paperBankroll(s.paper_start_bankroll);
       } else {
+        // Re-read the balance before every game: Kalshi takes each fill out of the balance, so a balance
+        // read at the start of the scan would count money already riding twice and oversize later bets.
+        try {
+          live!.balance = await live!.trader.balance();
+        } catch (e) {
+          console.error("balance refresh failed; stopping real-money bets this scan", (e as Error).message);
+          break;
+        }
         const ex = await liveExposure();
         bank = { cash: live!.balance, openExposure: ex.riding + ex.reserved, equity: live!.balance + ex.riding + ex.reserved };
       }
@@ -443,10 +451,17 @@ async function cancelBet(b: any, why: string) {
       const msg = (e as Error).message;
       if (!/404/.test(msg)) console.error("cancel", msg);
     }
-    // Check for a partial fill before marking canceled.
+    // Check for a partial fill. syncLiveOrder writes the true state ("filled" or "canceled")
+    // once Kalshi no longer shows the order as waiting.
     await syncLiveOrder(b);
     const [fresh] = await sql`select status from edgebot.bets where id = ${b.id}`;
-    if (fresh?.status !== "resting") return;
+    if (fresh?.status === "resting") {
+      // Kalshi still has the order open (the cancel didn't go through). Never mark it canceled here:
+      // it could still fill, and a row marked canceled would hide that money from the exposure caps
+      // and let the next scan put a second bet on the same game. The next tick tries again.
+      console.error("cancel did not go through; leaving order open", b.kalshi_order_id);
+    }
+    return;
   }
   await sql`update edgebot.bets set status = 'canceled', reason = coalesce(reason, '') || ' | ' || ${why} where id = ${b.id} and status = 'resting'`;
 }
@@ -621,7 +636,9 @@ async function dashboard() {
   const signals = await sql`select created_at, league, label, team, fair_p, ask, ev_per_dollar, decision, reason from edgebot.signals
                             where created_at > now() - interval '3 days' and decision <> 'unmatched' order by ev_per_dollar desc nulls last limit 25`;
   const unmatched = await sql`select count(*)::int as c from edgebot.signals where decision = 'unmatched' and created_at > now() - interval '1 day'`;
-  const runs = await sql`select task, started_at, finished_at, ok, summary, error from edgebot.runs order by started_at desc limit 8`;
+  // This endpoint is public: show only the first line of an error (no stack trace), with secrets hidden.
+  const runs = (await sql`select task, started_at, finished_at, ok, summary, error from edgebot.runs order by started_at desc limit 8`)
+    .map((r) => ({ ...r, error: r.error ? redactSecrets(String(r.error).split("\n")[0]).slice(0, 200) : null }));
   const credits = await stateGet<{ remaining: number | null; used: number | null }>("odds_credits");
   const exposure = await liveExposure();
 
@@ -770,7 +787,7 @@ Deno.serve(async (req) => {
         return json({ ok: true, run: id, result });
       } catch (e) {
         await finishRun(id, false, {}, (e as Error).stack ?? String(e));
-        return json({ ok: false, run: id, error: (e as Error).message }, 500);
+        return json({ ok: false, run: id, error: redactSecrets((e as Error).message) }, 500);
       }
     }
 
@@ -785,6 +802,6 @@ Deno.serve(async (req) => {
     return json({ error: "unknown task" }, 404);
   } catch (e) {
     console.error(e);
-    return json({ error: (e as Error).message }, 500);
+    return json({ error: redactSecrets((e as Error).message) }, 500);
   }
 });

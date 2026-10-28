@@ -79,22 +79,33 @@ export interface Settings {
   report_email: string | null;
 }
 
-/** Apply hard caps on top of whatever is in the database. */
+/**
+ * A database value as a number, or `fallback` when it is missing or not a real number.
+ * Without this, a blank or garbage setting becomes NaN, and every comparison with NaN is false,
+ * which would silently switch off the stop level, the daily limit and the long-shot filter.
+ */
+function num(x: unknown, fallback: number): number {
+  if (x === null || x === undefined || x === "") return fallback;
+  const v = Number(x);
+  return Number.isFinite(v) ? v : fallback;
+}
+
+/** Apply hard caps on top of whatever is in the database. Bad values fall back to the strictest limit. */
 export function effectiveSettings(s: Settings): Settings {
   return {
     ...s,
-    min_edge: Math.max(Number(s.min_edge), HARD.MIN_EDGE_FLOOR),
-    min_prob: Math.max(Number(s.min_prob), HARD.PROB_FLOOR),
-    max_prob: Math.min(Number(s.max_prob), HARD.PROB_CEILING),
-    kelly_fraction: Math.min(Math.max(Number(s.kelly_fraction), 0), 0.5),
-    max_stake_pct: Math.min(Number(s.max_stake_pct), HARD.MAX_STAKE_PCT),
-    max_bets_per_day: Math.min(Number(s.max_bets_per_day), HARD.MAX_BETS_PER_DAY),
-    max_open_exposure_pct: Math.min(Number(s.max_open_exposure_pct), HARD.MAX_OPEN_EXPOSURE_PCT),
-    stop_balance: Math.max(Number(s.stop_balance), HARD.STOP_BALANCE_FLOOR),
-    min_hours_before_start: Math.max(Number(s.min_hours_before_start), HARD.MIN_MINUTES_BEFORE_START / 60),
-    max_hours_before_start: Math.min(Number(s.max_hours_before_start), 168),
-    resting_order_minutes: Math.min(Math.max(Number(s.resting_order_minutes), 15), 360),
-    paper_start_bankroll: Number(s.paper_start_bankroll),
+    min_edge: Math.max(num(s.min_edge, HARD.MIN_EDGE_FLOOR), HARD.MIN_EDGE_FLOOR),
+    min_prob: Math.max(num(s.min_prob, HARD.PROB_FLOOR), HARD.PROB_FLOOR),
+    max_prob: Math.min(num(s.max_prob, HARD.PROB_CEILING), HARD.PROB_CEILING),
+    kelly_fraction: Math.min(Math.max(num(s.kelly_fraction, 0), 0), 0.5),
+    max_stake_pct: Math.max(Math.min(num(s.max_stake_pct, 0), HARD.MAX_STAKE_PCT), 0),
+    max_bets_per_day: Math.max(Math.min(num(s.max_bets_per_day, 0), HARD.MAX_BETS_PER_DAY), 0),
+    max_open_exposure_pct: Math.max(Math.min(num(s.max_open_exposure_pct, 0), HARD.MAX_OPEN_EXPOSURE_PCT), 0),
+    stop_balance: Math.max(num(s.stop_balance, HARD.STOP_BALANCE_FLOOR), HARD.STOP_BALANCE_FLOOR),
+    min_hours_before_start: Math.max(num(s.min_hours_before_start, 1), HARD.MIN_MINUTES_BEFORE_START / 60),
+    max_hours_before_start: Math.max(Math.min(num(s.max_hours_before_start, 48), 168), 0),
+    resting_order_minutes: Math.min(Math.max(num(s.resting_order_minutes, 120), 15), 360),
+    paper_start_bankroll: num(s.paper_start_bankroll, 0),
     leagues: (s.leagues ?? []).filter((k) => k in LEAGUES),
   };
 }
