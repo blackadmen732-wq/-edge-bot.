@@ -30,6 +30,26 @@ The owner dashboard can activate an eligible calibration version **for research 
 
 Configure `XAI_API_KEY` through Supabase's secure secrets interface. `RESEARCH_AI_MODEL` defaults to `grok-4.3`. No key means AI jobs return a clear configuration error; diagnosis and calibration remain available.
 
+The dashboard also provides **Provider connections → Save key securely**. This owner-only endpoint stores xAI, Alpha Vantage, The Odds API, or optional Resend credentials in encrypted Vault storage. No secret is returned to the browser or included in agent tools, URLs, or audit details. The Grok worker reads the xAI credential from Vault when no environment key is configured. Saving a key indicates presence, not successful provider validation. Resend sender/domain and recipient configuration remain separate.
+
+### Data connections
+
+An hourly collector uses read-only endpoints and preserves original provider attribution and availability times:
+
+| Source | Account key | Coverage |
+| --- | --- | --- |
+| Kraken public market data | None | Observations of BTC/USD and ETH/USD spot prices; not order execution |
+| Frankfurter | None | Daily EUR/USD and EUR/GBP reference rates; not live execution quotes |
+| US National Weather Service | None | Forecast snapshots for the six existing research cities |
+| Alpha Vantage | Provider-issued | Daily SPY research sample and WTI observations; source entitlements apply |
+| The Odds API | Provider-issued | Read-only snapshots for the three existing sports categories |
+
+No paid plan or provider account is created automatically. The collector caches successful polls and caps Alpha Vantage at 20 requests per UTC day and the sports feed at 12. Failed requests reserve quota conservatively. A lease prevents overlapping collection. Partial weather coverage, missing credentials, HTTP errors, and unavailable observations are recorded explicitly. Public forecasts are research context and are not represented as official market settlement observations.
+
+The dashboard's **Collect research data** button triggers a bounded collection. Automatic collection runs hourly at minute 23. API clients use `POST ?task=collect`, and `get_connections` reports key presence and the latest collection result without exposing values.
+
+Sources: [Kraken ticker API](https://docs.kraken.com/api-reference/market-data/get-ticker-information), [Frankfurter reference API](https://frankfurter.dev/), [NWS API](https://www.weather.gov/documentation/services-web-api), [Alpha Vantage documentation](https://www.alphavantage.co/documentation/), [The Odds API](https://the-odds-api.com/liveapi/guides/v4/).
+
 An AI job uses at most three model requests and six permitted tool calls. The backend reserves capacity before each call, with a maximum of 20 AI requests per UTC day. Provider token usage is recorded when available. Actual dollar cost remains null until measured; it is not invented from missing billing data. Failed requests still consume reserved capacity because billing may be uncertain.
 
 The model receives aggregated diagnostics, not raw example records. It may read health and model/hypothesis history or propose a hypothesis. It cannot activate a model or execute an external transaction. Retrieved text is evidence, not authority. An AI explanation is not a verified cause.

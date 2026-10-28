@@ -17,10 +17,11 @@ async function setup(){
  await db.exec(`
  create role anon;create role authenticated;
  create schema vault;create schema extensions;create schema edgebot;create schema cron;
- create table vault.secrets(name text unique,decrypted_secret text);
+ create table vault.secrets(id uuid primary key default gen_random_uuid(),name text unique,decrypted_secret text);
  create view vault.decrypted_secrets as select * from vault.secrets;
  create function extensions.gen_random_bytes(n int) returns bytea language sql as $$select decode(repeat(replace(gen_random_uuid()::text,'-',''),n),'hex')$$;
- create function vault.create_secret(s text,n text,d text) returns uuid language plpgsql as $$begin insert into vault.secrets values(n,s);return gen_random_uuid();end$$;
+ create function vault.create_secret(s text,n text,d text) returns uuid language plpgsql as $$declare ident uuid;begin insert into vault.secrets(name,decrypted_secret) values(n,s) returning id into ident;return ident;end$$;
+ create function vault.update_secret(ident uuid,s text,n text,d text) returns void language plpgsql as $$begin update vault.secrets set name=n,decrypted_secret=s where id=ident;end$$;
  create table cron.job(jobname text,schedule text,command text);
  create function cron.schedule(n text,s text,c text) returns int language plpgsql as $$begin insert into cron.job values(n,s,c);return 1;end$$;
  create table edgebot.odds(id bigint primary key,fetched_at timestamptz default now(),fair jsonb);
@@ -31,7 +32,9 @@ async function setup(){
  create table edgebot.mm_positions(ticker text primary key,updated_at timestamptz default now());
  `);
  const migration=await readFile(new URL('../supabase/migrations/20261028224408_research_analysis.sql',import.meta.url),'utf8');
- await db.exec(migration);return {db,store:new Store(adapter(db))};
+ await db.exec(migration);
+ await db.exec(await readFile(new URL('../supabase/migrations/20261028231258_research_connections.sql',import.meta.url),'utf8'));
+ return {db,store:new Store(adapter(db))};
 }
 const rows=Array.from({length:90},(_,i)=>({id:String(i),predictedAt:new Date(Date.UTC(2025,0,1+i)).toISOString(),availableAt:new Date(Date.UTC(2025,0,1+i)).toISOString(),outcomeAt:new Date(Date.UTC(2025,0,1+i,1)).toISOString(),probability:0.2,outcome:i%2===0,result:i%2===0?1:-1,cost:0.1,group:i%2===0?'even':'odd',flags:[]}));
 test('migration, archive, immutable datasets, job leases and research models work in Postgres',async()=>{
@@ -65,7 +68,7 @@ test('migration, archive, immutable datasets, job leases and research models wor
   await assert.rejects(()=>store.promote(model.id,'owner'),/eligible/);
   const h1=await store.propose({question:'Check missingness',evidence:[]},'test');
   assert.equal(h1.id,(await store.propose({question:'Check missingness',evidence:[]},'test')).id);
-  const h:any=await store.health();assert.equal(h.sources.length,10);assert.equal(h.execution,'analysis_only');
+  const h:any=await store.health();assert.equal(h.sources.length,16);assert.equal(h.execution,'analysis_only');
   await db.exec('set role anon');await assert.rejects(()=>db.query('select * from edgebot_research.datasets'),/permission denied/);await db.exec('reset role');
  }finally{await db.close();}
 });
@@ -102,5 +105,19 @@ test('AI request budget reserves capacity before provider calls',async()=>{
   assert.equal(measured.input_tokens,12);assert.equal(measured.output_tokens,4);
   const usage:any=await db.query('select count(*)::int as n,count(actual_cost_usd)::int as measured from edgebot_research.usage');
   assert.equal(usage.rows[0].n,20);assert.equal(usage.rows[0].measured,0);
+ }finally{await db.close();}
+});
+test('provider credentials stay in Vault and collection leases prevent overlap',async()=>{
+ const {db,store}=await setup();try{
+  await store.setProviderKey({provider:'xai',value:'private-test-key-first'},'owner');
+  const state=await store.connections();assert(state.providers.find(p=>p.id==='xai')?.keyConfigured);
+  assert(!JSON.stringify(state).includes('private-test-key-first'));
+  await store.setProviderKey({provider:'xai',value:'private-test-key-second'},'owner');
+  assert.equal(await store.providerKey('xai'),'private-test-key-second');
+  assert(!JSON.stringify((await db.query('select details from edgebot_research.events')).rows).includes('private-test-key'));
+  const lease=await store.claimCollection();assert(lease);assert.equal(await store.claimCollection(),null);
+  await store.releaseCollection('wrong');assert.equal(await store.claimCollection(),null);
+  await store.releaseCollection(lease!);assert(await store.claimCollection());
+  await store.reserveDataRequest('test',1);await assert.rejects(()=>store.reserveDataRequest('test',1),/budget/);
  }finally{await db.close();}
 });

@@ -1,4 +1,5 @@
 import { InputError, object, string, date, examples, digest, type Example } from './core.ts';
+import {PROVIDERS,providerName,providerKey,type Provider} from './connections.ts';
 export interface Sql {
  (strings: TemplateStringsArray, ...values: any[]): Promise<any[]>;
  json(value: any): any;
@@ -34,14 +35,15 @@ export class Store {
  async audit(actor: string, action: string, details: any = {}) {
   await this.sql`insert into edgebot_research.events(actor,action,details) values(${actor},${action},${this.sql.json(details)})`;
  }
- async importObservations(value: any, actor: string) {
+ async importObservations(value: any, actor: string, native=false) {
   if (!Array.isArray(value) || value.length<1 || value.length>200) throw new InputError('Import 1 to 200 observations');
   const rows = value.map(v=>{
    const x=object(v), payload=object(x.payload);
    if (JSON.stringify(payload).length>12000) throw new InputError('Observation payload too large');
    const availableAt=date(x.availableAt,'availableAt');
    if(Date.parse(availableAt)>Date.now()+5000) throw new InputError('availableAt cannot be in the future');
-   if(!String(x.source).endsWith('.import'))throw new InputError('Imports must use an import source');
+   const nativeSources=['kraken.spot','frankfurter.fx','nws.forecast','alphavantage.equities','alphavantage.commodities','odds.sports'];
+   if(!String(x.source).endsWith('.import')&&!(native&&nativeSources.includes(x.source)))throw new InputError('Imports must use an import source');
    return {source:string(x.source,'source'),externalId:string(x.externalId,'externalId'),
     eventAt:date(x.eventAt,'eventAt'),availableAt,payload};
   });
@@ -146,5 +148,51 @@ export class Store {
  async finishUsage(id:number,usage:any,status:string) {
   const valid=(x:any)=>typeof x==='number'&&Number.isInteger(x)&&x>=0?x:null;
   await this.sql`update edgebot_research.usage set input_tokens=coalesce(${valid(usage?.prompt_tokens)},input_tokens),output_tokens=coalesce(${valid(usage?.completion_tokens)},output_tokens),status=${status} where id=${id}`;
+ }
+ async providerKey(provider:Provider):Promise<string|null> {
+  providerName(provider);
+  const [r]=await this.sql`select decrypted_secret from vault.decrypted_secrets where name=${'edgebot_research_key_'+provider} limit 1`;
+  return r?.decrypted_secret??null;
+ }
+ async connections() {
+  const names=await this.sql`select name from vault.secrets where name like 'edgebot_research_key_%'`;
+  const last=await this.sql`select details,created_at from edgebot_research.events where action='collect_connections' order by created_at desc limit 1`;
+  return {providers:Object.entries(PROVIDERS).map(([id,details])=>({id,...details,keyConfigured:names.some(r=>r.name==='edgebot_research_key_'+id)})),lastCollection:last[0]??null};
+ }
+ async setProviderKey(input:unknown,actor:string) {
+  const x=object(input),provider=providerName(x.provider),value=providerKey(x.value),name='edgebot_research_key_'+provider;
+  await this.sql.begin(async tx=>{
+   await tx`select pg_advisory_xact_lock(174523,4)`;
+   const [existing]=await tx`select id from vault.secrets where name=${name}`;
+   if(existing)await tx`select vault.update_secret(${existing.id}::uuid,${value},${name},'Edge Bot research provider credential')`;
+   else await tx`select vault.create_secret(${value},${name},'Edge Bot research provider credential')`;
+   await tx`insert into edgebot_research.events(actor,action,details) values(${actor},'configure_provider',${tx.json({provider,configured:true})})`;
+  });return {provider,keyConfigured:true,validation:'not_tested'};
+ }
+ async claimCollection():Promise<string|null> {
+  return this.sql.begin(async tx=>{
+   await tx`select pg_advisory_xact_lock(174523,5)`;
+   const [r]=await tx`select value from edgebot_research.configuration where key='collector_lease'`;
+   if(r&&JSON.parse(r.value).until>Date.now())return null;
+   const id=crypto.randomUUID(),value=JSON.stringify({id,until:Date.now()+120000});
+   await tx`insert into edgebot_research.configuration(key,value) values('collector_lease',${value}) on conflict(key) do update set value=excluded.value`;return id;
+  });
+ }
+ async releaseCollection(id:string){await this.sql`delete from edgebot_research.configuration where key='collector_lease' and (value::jsonb->>'id')=${id}`;}
+ async collectionDue(source:string,seconds:number){
+  const [r]=await this.sql`select value from edgebot_research.configuration where key=${'collection:'+source}`;
+  return !r||Date.now()-Date.parse(r.value)>=seconds*1000;
+ }
+ async markCollected(source:string){
+  await this.sql`insert into edgebot_research.configuration(key,value) values(${'collection:'+source},${new Date().toISOString()}) on conflict(key) do update set value=excluded.value`;
+ }
+ async reserveDataRequest(provider:string,max:number){
+  return this.sql.begin(async tx=>{
+   await tx`select pg_advisory_xact_lock(174523,6)`;
+   const key='data_budget:'+provider+':'+new Date().toISOString().slice(0,10);
+   const [r]=await tx`select value from edgebot_research.configuration where key=${key}`;const n=Number(r?.value??0);
+   if(n>=max)throw new InputError('Daily provider request budget reached');
+   await tx`insert into edgebot_research.configuration(key,value) values(${key},${String(n+1)}) on conflict(key) do update set value=excluded.value`;
+  });
  }
 }

@@ -51,7 +51,12 @@ export function handler(deps:HttpDeps){return async(req:Request):Promise<Respons
   if(req.method==='GET'&&task==='health')return respond(await deps.service.call('get_data_health',{},actor));
   if(req.method!=='POST')return respond({error:'Method not allowed'},405);
   if(task==='worker')return respond(await deps.service.worker());
+  if(task==='collect')return respond(await deps.service.collect());
   const input=await body(req);
+  if(task==='credentials'){
+   if(!owner)return respond({error:'Owner credential required'},403);
+   return respond(await deps.service.configure(input,actor));
+  }
   if(task==='promote'){
    if(!owner)return respond({error:'Owner credential required'},403);
    return respond(await deps.service.promote(input.id,actor));

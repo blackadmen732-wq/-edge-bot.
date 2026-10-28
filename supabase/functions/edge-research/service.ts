@@ -1,6 +1,7 @@
 import {object,string,InputError,diagnose,calibrate,safeError} from './core.ts';
 import type {Store} from './store.ts';
 import {runAgent,type AgentConfig} from './agent.ts';
+import {collectConnections} from './connections.ts';
 const uuid=(v:unknown)=>{
  const id=string(v,'id');if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw new InputError('Invalid ID');return id;
 };
@@ -8,6 +9,7 @@ const schema=(properties:Record<string,unknown>={},required:string[]=[])=>({type
 const text={type:'string'};
 export const TOOLS=[
  {name:'get_data_health',description:'Read research source freshness, coverage, queue and configuration health.',inputSchema:schema()},
+ {name:'get_connections',description:'Read provider configuration presence and collector results; never returns secret values.',inputSchema:schema()},
  {name:'list_datasets',description:'List immutable research datasets and their fingerprints.',inputSchema:schema()},
  {name:'create_dataset',description:'Snapshot recorded examples, or supplied educational observations, for reproducible testing.',inputSchema:schema({name:text,examples:{type:'array',maxItems:5000,items:{type:'object'}}},['name'])},
  {name:'diagnose_dataset',description:'Compare all recorded outcomes, groups and quality flags. Associations are not causes.',inputSchema:schema({datasetId:text},['datasetId'])},
@@ -28,7 +30,8 @@ export class Service {
   if(Object.keys(a).some(k=>!allowed.includes(k)))throw new InputError('Unexpected tool argument');
   let result:any;
   switch(name) {
-   case 'get_data_health':result={...await this.store.health(),aiConfigured:!!this.agentConfig.key,aiModel:this.agentConfig.model??'grok-4.3'};break;
+   case 'get_data_health':result={...await this.store.health(),aiConfigured:!!this.agentConfig.key||!!await this.store.providerKey('xai'),aiModel:this.agentConfig.model??'grok-4.3'};break;
+   case 'get_connections':result=await this.store.connections();break;
    case 'list_datasets':result=await this.store.datasets();break;
    case 'create_dataset':result=await this.store.createDataset(a,actor);break;
    case 'diagnose_dataset':result=diagnose((await this.store.dataset(uuid(a.datasetId))).examples);break;
@@ -46,7 +49,7 @@ export class Service {
   const job=await this.store.claim();if(!job)return {processed:0};
   try {
    const data=await this.store.dataset(job.dataset_id);
-   const report=job.kind==='diagnose'?diagnose(data.examples):job.kind==='calibrate'?calibrate(data.examples):await runAgent(this,job,data,this.agentConfig);
+   const report=job.kind==='diagnose'?diagnose(data.examples):job.kind==='calibrate'?calibrate(data.examples):await runAgent(this,job,data,{...this.agentConfig,key:this.agentConfig.key||await this.store.providerKey('xai')||undefined});
    const result={...report,datasetFingerprint:data.fingerprint,analysisVersion:'research-1'};
    const recorded=await this.store.finish(job,result);
    return {processed:1,id:job.id,recorded};
@@ -56,4 +59,6 @@ export class Service {
   }
  }
  async promote(id:unknown,actor:string){return this.store.promote(uuid(id),actor);}
+ async configure(input:unknown,actor:string){return this.store.setProviderKey(input,actor);}
+ async collect(){return collectConnections(this.store);}
 }
