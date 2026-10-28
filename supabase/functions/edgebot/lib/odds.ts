@@ -24,8 +24,30 @@ export interface FetchResult {
   last: number | null;
 }
 
+/**
+ * Hide API keys and tokens in a message before it is logged or shown on the public dashboard.
+ * Network errors repeat the full request URL, and The Odds API key travels in that URL.
+ */
+export function redactSecrets(msg: string): string {
+  return msg
+    .replace(/([?&](?:api_?key|apikey|token|key)=)[^&\s)"']+/gi, "$1[hidden]")
+    .replace(/(bearer\s+)[A-Za-z0-9._~+/=-]{8,}/gi, "$1[hidden]")
+    .replace(/sk-ant-[A-Za-z0-9_-]+/g, "[hidden]")
+    .replace(/xai-[A-Za-z0-9_-]{8,}/g, "[hidden]")
+    .replace(/re_[A-Za-z0-9_]{16,}/g, "[hidden]");
+}
+
 /** One call = 1 credit (h2h market, up to 10 bookmakers). */
 export async function fetchOdds(apiKey: string, sport: string, fromIso: string, toIso: string): Promise<FetchResult> {
+  try {
+    return await fetchOddsRaw(apiKey, sport, fromIso, toIso);
+  } catch (e) {
+    const msg = (e as Error)?.message ?? String(e);
+    throw new Error(redactSecrets(apiKey ? msg.split(apiKey).join("[hidden]") : msg));
+  }
+}
+
+async function fetchOddsRaw(apiKey: string, sport: string, fromIso: string, toIso: string): Promise<FetchResult> {
   const url = new URL(`https://api.the-odds-api.com/v4/sports/${sport}/odds/`);
   url.searchParams.set("apiKey", apiKey);
   url.searchParams.set("markets", "h2h");
