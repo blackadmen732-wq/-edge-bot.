@@ -56,6 +56,31 @@ export function devig(decimalOdds: Record<string, number>): Record<string, numbe
   return out;
 }
 
+/**
+ * No-vig probabilities with the "power" method: find k so that the implied chances raised to k sum to 1.
+ * Bookmakers put more of their cut on long shots; the proportional method leaves long shots ~1 point too
+ * high (enough to fake an "edge" on cheap contracts). The power method takes more of the cut from them.
+ */
+export function devigPower(decimalOdds: Record<string, number>): Record<string, number> | null {
+  const entries = Object.entries(decimalOdds).filter(([, d]) => Number.isFinite(d) && d > 1);
+  if (entries.length < 2 || entries.length !== Object.keys(decimalOdds).length) return null;
+  const implied = entries.map(([k, d]) => [k, 1 / d] as const);
+  const total = implied.reduce((s, [, q]) => s + q, 0);
+  if (total < 0.98 || total > 1.25) return null;
+  let lo = 0.2, hi = 10;
+  for (let i = 0; i < 80; i++) {
+    const k = (lo + hi) / 2;
+    const s = implied.reduce((a, [, q]) => a + Math.pow(q, k), 0);
+    if (s > 1) lo = k; else hi = k;
+  }
+  const k = (lo + hi) / 2;
+  const raw = implied.map(([name, q]) => [name, Math.pow(q, k)] as const);
+  const sum = raw.reduce((a, [, p]) => a + p, 0);
+  const out: Record<string, number> = {};
+  for (const [name, p] of raw) out[name] = p / sum;
+  return out;
+}
+
 /** Average several sets of no-vig probabilities that share the same outcome names. */
 export function averageFair(sets: Record<string, number>[]): Record<string, number> | null {
   if (sets.length === 0) return null;

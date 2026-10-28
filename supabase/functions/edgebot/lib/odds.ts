@@ -1,7 +1,7 @@
 // The Odds API client + turning sharp-book prices into fair win chances.
 // Docs: https://the-odds-api.com/liveapi/guides/v4/
 
-import { averageFair, devig, maxDisagreement } from "./pricing.ts";
+import { averageFair, devigPower, maxDisagreement } from "./pricing.ts";
 import { HARD, REFERENCE_BOOKS, SHARP_BOOKS } from "./rules.ts";
 
 export interface OddsEvent {
@@ -73,7 +73,7 @@ export function fairLine(ev: OddsEvent, threeWay: boolean, now = Date.now()): Fa
     const want = threeWay ? 3 : 2;
     if (Object.keys(prices).length !== want) continue;
     if (!SHARP_BOOKS.includes(b.key)) continue;
-    const f = devig(prices);
+    const f = devigPower(prices); // power method: proportional leaves long shots too high
     if (f) fairBySharpBook[b.key] = f;
   }
   const others = Object.entries(fairBySharpBook).filter(([k]) => k !== "pinnacle").map(([, f]) => f);

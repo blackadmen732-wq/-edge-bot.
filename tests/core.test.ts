@@ -6,7 +6,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { ceilCent, kalshiFee, devig, evPerDollar, maxMakerPrice, sizeBet, averageFair } from "../supabase/functions/edgebot/lib/pricing.ts";
+import { ceilCent, kalshiFee, devig, devigPower, evPerDollar, maxMakerPrice, sizeBet, averageFair } from "../supabase/functions/edgebot/lib/pricing.ts";
 import { decide } from "../supabase/functions/edgebot/lib/decide.ts";
 import { effectiveSettings, HARD } from "../supabase/functions/edgebot/lib/rules.ts";
 import type { Settings } from "../supabase/functions/edgebot/lib/rules.ts";
@@ -66,6 +66,21 @@ test("devig rejects broken prices", () => {
   assert.equal(devig({ A: 1.0, B: 1.9 }), null);
   assert.equal(devig({ A: 5, B: 5 }), null); // sums to 0.4: nonsense
   assert.equal(devig({ A: 1.9 }), null);
+});
+
+test("power de-vig: sums to 1, takes more of the cut from long shots", () => {
+  const odds = { Home: 1.3, Draw: 5.6, Away: 10.5 }; // ~5% margin, like a retail-ish book
+  const prop = devig(odds)!, pow = devigPower(odds)!;
+  const sum = Object.values(pow).reduce((a, b) => a + b, 0);
+  assert.ok(Math.abs(sum - 1) < 1e-9);
+  assert.ok(pow.Away < prop.Away, "long shot gets a lower chance than proportional");
+  assert.ok(pow.Home > prop.Home, "favorite gets a higher chance than proportional");
+  // Even prices stay even; a no-margin book is unchanged.
+  const even = devigPower({ A: 1.95, B: 1.95 })!;
+  assert.ok(Math.abs(even.A - 0.5) < 1e-9);
+  const fair = devigPower({ A: 2, B: 4, C: 4 })!;
+  assert.ok(Math.abs(fair.A - 0.5) < 1e-6 && Math.abs(fair.B - 0.25) < 1e-6);
+  assert.equal(devigPower({ A: 1.0, B: 1.9 }), null);
 });
 
 test("averageFair needs matching outcomes", () => {
