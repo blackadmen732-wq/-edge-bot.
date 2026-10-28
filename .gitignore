@@ -6,3 +6,5 @@ tests/e2e/deno.lock
 *.pem
 .env
 .env.*
+supabase/.temp/
+

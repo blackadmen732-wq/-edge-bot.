@@ -1,5 +1,9 @@
 # Edge Bot — football price checker
 
+## Research workspace
+
+The companion `edge-research` service adds a durable data archive, outcome/failure analysis, versioned calibration experiments, an authenticated MCP connection for Grok Bot, bounded optional AI investigations, and a standalone research dashboard. See [the research setup and connection guide](docs/research-system.md). Research model versions do not change execution settings.
+
 A bot that compares Kalshi's football prices with what the sharpest sportsbooks say each team's real chance is, and bets small only when Kalshi's price is wrong by more than the fees. It starts with fake money (paper trading). Real money stays locked until it has earned it.
 
 **Plain truth:** most people who bet on sports lose. This bot is built to find out *whether* it has an edge, cheaply and honestly, not to promise one. Treat any real money you put in as money you can afford to lose.
@@ -185,3 +189,4 @@ update edgebot.settings set leagues = array['ncaaf','nfl','eflchamp','mls'] wher
 Each extra league costs about 120 odds credits a month on the free plan.
 
 Not financial or legal advice.
+
