@@ -1,3 +1,4 @@
+import {mountAgentChat} from './chat.mjs';
 import {mountCosmos} from './cosmos.mjs';
 import {roles,createDesk,processCandidate,markPosition,metrics} from './engine.mjs';
 const $=id=>document.getElementById(id);let state=createDesk();const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
@@ -17,3 +18,11 @@ $('import').onchange=async()=>{try{const f=$('import').files[0];if(!f)return;if(
 $('quote').onclick=()=>action(()=>markPosition(state,$('quote-mint').value,Number($('quote-price').value),$('quote-time').value));$('search').oninput=render;$('export').onclick=()=>download('edge-paper-session.json',state);
 $('sample').onclick=()=>download('candidate-template.json',[{mint:'REPLACE_WITH_TOKEN_MINT',observedAt:new Date().toISOString(),mintRevoked:null,freezeRevoked:null,liquidityVerified:null,devRugLinked:null,bundledLaunch:null,top10Percent:null,volume1hUsd:null,score:null,scoreVersion:'REPLACE_WITH_MODEL_VERSION',price:null}]);
 const providers=[['Existing research API','Available through authenticated research workspace','../research/index.html'],['Grok / xAI','Provider key required; secure setup in research workspace','https://console.x.ai/'],['Solana RPC + streaming','Adapter and provider account required','https://www.helius.dev/'],['Pump.fun / PumpSwap','Launch and migration decoder not connected','https://pump.fun/'],['Bonk.fun / Raydium','LaunchLab and pool decoders not connected','https://docs.raydium.io/'],['Meteora','Pool-specific evidence decoder not connected','https://docs.meteora.ag/']];for(const [name,status,url] of providers){const c=el('article','','role');c.append(el('h2',name),el('p',status));const a=el('a','Open provider ↗');a.href=url;a.target='_blank';a.rel='noopener noreferrer';c.append(a);$('providers').append(c);}page('overview');render();
+
+mountAgentChat($('agent-chat'),()=>state);
+
+for(const section of document.querySelectorAll('.page')){
+ const ambient=document.createElement('div');ambient.className='section-flow';ambient.setAttribute('aria-hidden','true');
+ for(let i=0;i<24;i++){const dot=document.createElement('i');dot.style.setProperty('--angle',(i*137.5)+'deg');dot.style.setProperty('--delay',(-i*.41)+'s');dot.style.setProperty('--radius',(80+i%6*22)+'px');ambient.append(dot);}
+ section.prepend(ambient);
+}
