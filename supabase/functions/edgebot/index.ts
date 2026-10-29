@@ -8,6 +8,7 @@
 //   control   pause / resume / go_live (needs the control token)
 //   mm        every 30 min: paper market making on weather markets (fake money only)
 //   discover  list Kalshi series, ?category=Sports (default) or Climate (needs the control token)
+//   forex     controlled research-only OHLC analysis, five agents, no orders (POST with control token)
 //
 // Paper trading always runs. Real money only runs in "live" mode, and only after the live gate passes.
 
@@ -31,6 +32,7 @@ import {
 } from "./lib/mm.ts";
 import type { MmSettings } from "./lib/mm.ts";
 import { forecastHighs } from "./lib/weather.ts";
+import { analyzeForex } from "./lib/forex.ts";
 
 export const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: Number(Deno.env.get("EDGEBOT_DB_MAX_CONN") ?? 3), idle_timeout: 20 });
 
@@ -1078,6 +1080,23 @@ Deno.serve(async (req) => {
       } catch (e) {
         await finishRun(id, false, {}, (e as Error).stack ?? String(e));
         return json({ ok: false, run: id, error: redactSecrets((e as Error).message) }, 500);
+      }
+    }
+
+    // Research-only forex endpoint: returns five agent reports, NEVER creates an order.
+    if (task === "forex") {
+      const ctl = await vault("edgebot_control_token");
+      if (!ctl || req.headers.get("x-edgebot-token") !== ctl) return json({ error: "unauthorized" }, 401);
+      if (req.method !== "POST") return json({ error: "POST required" }, 405);
+      const raw = await req.text();
+      if (raw.length > 1_000_000) return json({ error: "Payload too large" }, 413);
+      let body: unknown;
+      try { body = JSON.parse(raw); }
+      catch { return json({ error: "Invalid JSON input" }, 400); }
+      try {
+        return json({ ok: true, analysis: analyzeForex(body as Parameters<typeof analyzeForex>[0]) });
+      } catch (e) {
+        return json({ ok: false, error: (e as Error).message }, 400);
       }
     }
 
