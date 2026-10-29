@@ -85,3 +85,19 @@ Check a TypeScript typecheck with the Supabase/Deno toolchain before deployment.
 The older dashboard stores the control token in localStorage and its backend allows wildcard CORS; these do not bypass the header-based authorization check, but they enlarge the impact of a browser-origin compromise. Prefer short-lived, scoped authorization before expanding access. The existing live Kalshi mode should stay disabled; paper profit over 50 bets is **not** sufficient evidence of a durable edge or a safe real-money system.
 
 This branch is only the first integrated analysis layer, **not** a complete self-running AI trading business.
+
+## Actual connected Supabase status (inspected October 29, 2026)
+
+- Project supabase-cyan-ball is ACTIVE_HEALTHY.
+- Deployed edgebot Edge Function is active, version 6, in paper mode.
+- Database: 102 recorded task runs (102 succeeded, zero recorded failures), zero bets, zero signals.
+- Deployed edgebot currently has an **older 808-line index.ts** without lib/mm.ts or lib/weather.ts, whereas GitHub main contains a newer 1098-line index.ts with those modules.
+- The edgebot-mm cron schedule is active, but zero mm task runs are recorded. The deployed code does not expose the mm route. **Do not call the deployed weather market-making system operational.**
+- A separate deployed edge-research function (version 2) already has outcome diagnostics, calibration, AI research jobs, data-source collectors and read-only provider integrations. This code was not present in the Edge Bot GitHub tree.
+- edgebot_research has 116 observations across sources, but zero examples, datasets, jobs, models or hypotheses. Its FX feeds: Frankfurter daily currency rates (8 observations), authenticated import (zero). Daily reference exchange rates are not intraday OHLC data.
+
+### Deployment warning
+
+Do not deploy this draft branch directly to the production Edge Function without first reconciling the deployed edgebot version and GitHub main. That operation would change more than forex analysis because GitHub main already includes undeployed weather market-making code. Prefer a reviewed, tested, deliberately staged deployment.
+
+The existing edge-research platform should eventually receive **timestamped, labeled forex research examples** from a separate paper ledger, using its dataset and calibration tools. Do not invent probabilities or label unknown trades as wins.
