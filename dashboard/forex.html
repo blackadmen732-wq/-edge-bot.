@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Edge Bot | Forex Research</title>
+<style>
+:root{font-family:Inter,system-ui,sans-serif;color:#e8effc;background:#090f20;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;padding:28px;max-width:1320px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+h1{margin:0;font-size:32px;letter-spacing:-1px}h2{font-size:18px;margin:0 0 12px}p,small{color:#a2afc9;line-height:1.5}
+a{color:#9abbff}.tag{background:#19294a;padding:7px 12px;border-radius:24px;font-size:12px;color:#bdd0fb}
+.panel{background:#121d35;border:1px solid #293d63;border-radius:16px;padding:20px;margin:18px 0}
+label{font-size:12px;color:#a4b6d8;display:block;margin-bottom:4px}
+input,select,textarea,button{font:inherit;border:1px solid #344c75;background:#0a152b;color:#f1f6ff;padding:10px 12px;border-radius:8px;width:100%}
+textarea{min-height:98px}button{cursor:pointer;background:#3c75e5;border:0;font-weight:650;width:auto;padding:12px 22px}
+button:disabled{opacity:.6;cursor:wait}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.report{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.agent{padding:15px;background:#101a31;border:1px solid #263a5d;border-radius:12px}
+.agent h3{font-size:15px;margin:0 0 12px;color:#bfd2fd}.agent strong{display:block;margin:8px 0;font-size:19px}
+.agent p{font-size:13px;margin:6px 0}#status{min-height:24px;white-space:pre-wrap}
+#chart{width:100%;height:220px;background:#0a152b;border-radius:8px}
+.muted{color:#8c9bb6}#details{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;color:#a9bae0}
+</style></head><body>
+<header><div><small>EDGE BOT / RESEARCH</small><h1>FOREX LAB</h1></div><span class="tag">ANALYSIS ONLY — ZERO LIVE ORDERS</span></header>
+<p>Upload historical closed-candle OHLC CSV data, then run five agent analyses using Edge Bot's existing Supabase backend. The original Kalshi trading engine is not connected to this page.</p>
+<section class="panel"><h2>1. Market input</h2>
+<div class="fields">
+<div><label for="api">Edge Bot function URL</label><input id="api" value="https://mhahkbssltukjhusjsjf.supabase.co/functions/v1/edgebot"></div>
+<div><label for="token">Edge Bot control token (not saved)</label><input id="token" type="password" autocomplete="off" placeholder="Required for research endpoint"></div>
+<div><label for="pair">Currency pair</label><select id="pair"><option value="EUR_USD">EUR/USD</option><option value="GBP_USD">GBP/USD</option><option value="USD_JPY">USD/JPY</option></select></div>
+<div><label for="interval">Candle timeframe</label><select id="interval"><option value="15">15 minutes</option><option value="5">5 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="240">4 hours</option><option value="1">1 minute</option></select></div>
+<div><label for="csv">Closed OHLC candles (CSV)</label><input id="csv" type="file" accept=".csv,text/csv"></div>
+<div><label for="spread">Observed spread (pips)</label><input id="spread" type="number" min="0" step=".1" placeholder="Leave blank if unknown"></div>
+<div><label for="equity">Simulated equity (USD)</label><input id="equity" type="number" min=".01" value="10000"></div>
+<div><label for="drawdown">Simulated drawdown (%)</label><input id="drawdown" type="number" min="0" max="100" value="0"></div>
+</div>
+<p class="muted">CSV columns: time,open,high,low,close. Timestamps must represent CLOSED candles in UTC, sorted oldest to newest, with 60–5000 rows. Do not import secrets or account statements. The input is sent only to the function URL above.</p>
+<div class="fields">
+<div><label for="calendar">Verified macro calendar snapshot time (UTC, optional)</label><input id="calendar" type="datetime-local"></div>
+<div><label for="events">Macro events JSON (optional; requires trustworthy complete feed)</label><textarea id="events" placeholder='[{"time":"2026-10-29T12:30:00Z","currency":"USD","impact":"high","title":"Economic release"}]'></textarea></div>
+</div>
+<p class="muted">Without a trustworthy, complete and recent calendar, the system will mark macro conditions unknown and block any watch candidate. Never enter a fake calendar just to pass the risk check.</p>
+<button id="run">Analyze provided candles</button>
+<p id="status" role="status" aria-live="polite"></p>
+</section>
+<section class="panel"><h2>2. Historical close price</h2>
+<svg id="chart" viewBox="0 0 900 220" preserveAspectRatio="none" aria-label="Close price chart"><text x="30" y="110" fill="#8c9bb6">Upload a CSV to view the price history.</text></svg>
+</section>
+<section class="panel"><h2>3. Five-agent report</h2>
+<div class="report">
+<div class="agent"><h3>01 · Pattern</h3><strong id="pattern">—</strong><p id="patternDetails"></p></div>
+<div class="agent"><h3>02 · Quantitative</h3><strong id="quant">—</strong><p id="quantDetails"></p></div>
+<div class="agent"><h3>03 · Macroeconomic</h3><strong id="macro">—</strong><p id="macroDetails"></p></div>
+<div class="agent"><h3>04 · Risk</h3><strong id="risk">—</strong><p id="riskDetails"></p></div>
+<div class="agent"><h3>05 · Strategy</h3><strong id="strategy">—</strong><p id="strategyDetails"></p></div>
+</div>
+<details style="margin-top:20px"><summary>Full auditable JSON report</summary><pre id="details"></pre></details>
+</section>
+<p class="muted">Research-only software. A detected pattern is not a validated profitable strategy. No broker connection, live trades, or guaranteed forecasts.</p>
+<script>
+const el=id=>document.getElementById(id);
+function value(id){return el(id).value.trim()}
+function optionalNumber(id){return value(id)===""?undefined:Number(value(id))}
+function csvParse(text){
+  const rows=text.trim().replace(/\r/g,"").split("\n");
+  const header=rows.shift().split(",").map(x=>x.trim().toLowerCase());
+  const names=["time","open","high","low","close"];
+  const indexes=names.map(n=>header.indexOf(n));
+  if(indexes.some(i=>i<0))throw Error("CSV must have time,open,high,low,close headers");
+  return rows.filter(x=>x.trim()).map((line,n)=>{
+    const fields=line.split(",").map(x=>x.trim());
+    const t=new Date(fields[indexes[0]]);
+    if(!Number.isFinite(t.getTime()))throw Error("Invalid candle date on row "+(n+2));
+    return {time:t.toISOString(),open:Number(fields[indexes[1]]),high:Number(fields[indexes[2]]),low:Number(fields[indexes[3]]),close:Number(fields[indexes[4]])};
+  });
+}
+function renderChart(c){
+  const svg=el("chart");svg.replaceChildren();
+  const close=c.map(x=>x.close),min=Math.min(...close),max=Math.max(...close);
+  const span=max-min||1;
+  const points=close.map((v,i)=>[20+i*860/Math.max(1,close.length-1),200-(v-min)/span*180].join(",")).join(" ");
+  const line=document.createElementNS("http://www.w3.org/2000/svg","polyline");
+  line.setAttribute("points",points);line.setAttribute("fill","none");line.setAttribute("stroke","#56b5fa");line.setAttribute("stroke-width","2");svg.append(line);
+}
+function show(r){
+  el("pattern").textContent=r.patternAgent.bias.toUpperCase();
+  el("patternDetails").textContent=r.patternAgent.patterns.join(", ")||"No latest-candle pattern";
+  el("quant").textContent=r.quantAgent.bias.toUpperCase();
+  el("quantDetails").textContent="SMA20 "+r.quantAgent.sma20+" · SMA50 "+r.quantAgent.sma50+" · RSI14 "+r.quantAgent.rsi14+" · ATR14 "+r.quantAgent.atr14;
+  el("macro").textContent=r.macroAgent.status.replaceAll("_"," ").toUpperCase();
+  el("macroDetails").textContent=r.macroAgent.evidence.join("; ");
+  el("risk").textContent=r.riskAgent.allowedForResearch?"PASSED":"BLOCKED";
+  el("riskDetails").textContent=r.riskAgent.blockers.join("; ")||"Estimated paper units: "+r.riskAgent.paperPositionUnits;
+  el("strategy").textContent=r.strategyAgent.action.replaceAll("_"," ");
+  el("strategyDetails").textContent=r.strategyAgent.reasons.join("; ");
+  el("details").textContent=JSON.stringify(r,null,2);
+}
+el("run").addEventListener("click",async()=>{
+  const btn=el("run");btn.disabled=true;el("status").textContent="Reading and validating candles...";
+  try{
+    const file=el("csv").files[0];if(!file)throw Error("Upload a candle CSV first");
+    if(file.size>800000)throw Error("CSV is too large");
+    const candles=csvParse(await file.text());
+    if(candles.length<60||candles.length>5000)throw Error("Need between 60 and 5000 candles");
+    renderChart(candles);
+    let events;
+    if(value("events"))events=JSON.parse(value("events"));
+    const snapshot=value("calendar")?new Date(value("calendar")+"Z").toISOString():undefined;
+    // Evaluate at the most recent closed candle's time, not at an arbitrary later date.
+    const body={pair:value("pair"),intervalMinutes:Number(value("interval")),candles,
+      asOf:candles[candles.length-1].time,spreadPips:optionalNumber("spread"),equityUsd:optionalNumber("equity"),
+      drawdownPct:optionalNumber("drawdown"),calendarAsOf:snapshot,events};
+    const url=value("api");if(!/^https:\/\//.test(url))throw Error("HTTPS backend URL required");
+    const response=await fetch(url+"?task=forex",{method:"POST",headers:{"content-type":"application/json","x-edgebot-token":value("token")},body:JSON.stringify(body)});
+    const output=await response.json();if(!response.ok||!output.ok)throw Error(output.error||"Analysis request failed");
+    show(output.analysis);el("status").textContent="Report generated. Signals are research watch candidates, never orders.";
+  }catch(e){el("status").textContent="Error: "+String(e.message||e)}
+  finally{btn.disabled=false}
+});
+</script>
+</body></html>
