@@ -1,3 +1,4 @@
+import {mountWorkflow} from './workflow.mjs';
 import {mountImmersive} from './immersive.mjs';
 import {mountParallax} from './parallax.mjs';
 import {mountScene,soundSystem} from './scene.mjs';
@@ -5,7 +6,7 @@ import {mountAgentChat} from './chat.mjs';
 import {mountCosmos} from './cosmos.mjs';
 import {roles,createDesk,processCandidate,markPosition,metrics} from './engine.mjs';
 const $=id=>document.getElementById(id);let state=createDesk();try{const saved=JSON.parse(localStorage.getItem('edge-paper-v1'));if(saved?.mode==='paper'&&Number.isFinite(saved.cash)&&saved.cash>=0&&Number.isFinite(saved.initial)&&['positions','closed','events','seen'].every(k=>Array.isArray(saved[k])))state=saved;}catch{}const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
-function page(id){window.scrollTo({top:0,behavior:'instant'});document.querySelectorAll('.page').forEach(e=>e.hidden=e.id!==id);document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('active',e.dataset.page===id));$('breadcrumb').textContent='Workspace / '+id;}
+function page(id){if(window.parallaxNavigate?.(id))return;window.scrollTo({top:0,behavior:'instant'});document.querySelectorAll('.page').forEach(e=>e.hidden=e.id!==id);document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('active',e.dataset.page===id));$('breadcrumb').textContent='Workspace / '+id;}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));
 function blade(title,data){$('blade-title').textContent=title;$('blade-content').textContent=JSON.stringify(data,null,2);$('blade').showModal();}$('close-blade').onclick=()=>$('blade').close();
 function el(tag,text,cls){const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;}
@@ -42,3 +43,5 @@ mountParallax();page('parallax');
 const observatory=mountImmersive(page);page('observatory');
 document.querySelector('.brand').onclick=e=>{e.preventDefault();page('observatory');};
 observatory.setVideo('https://d8j0ntlcm91z4.cloudfront.net/user_36nirQ0Q9RM6LsQk7YYAZf75ceZ/hf_20261030_013817_1f3f5ad4-93fb-4ece-9e50-f9fe7247444c.mp4');
+
+mountWorkflow(()=>metrics(state));
