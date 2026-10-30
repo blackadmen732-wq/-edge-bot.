@@ -49,6 +49,7 @@ export function handler(deps:HttpDeps){return async(req:Request):Promise<Respons
   }
   const task=url.searchParams.get('task')??'health';
   if(req.method==='GET'&&task==='health')return respond(await deps.service.call('get_data_health',{},actor));
+  if(req.method==='GET'&&task==='universe')return respond(await deps.service.call('get_universe',{},actor));
   if(req.method!=='POST')return respond({error:'Method not allowed'},405);
   if(task==='worker')return respond(await deps.service.worker());
   if(task==='collect')return respond(await deps.service.collect());
