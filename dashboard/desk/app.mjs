@@ -1,3 +1,4 @@
+import {mountParallax} from './parallax.mjs';
 import {mountScene,soundSystem} from './scene.mjs';
 import {mountAgentChat} from './chat.mjs';
 import {mountCosmos} from './cosmos.mjs';
@@ -34,3 +35,5 @@ const moneyScene=mountScene($('money-scene'),{mode:'money'});
 $('sound-toggle').onclick=async()=>{try{const on=await sounds.toggle();$('sound-toggle').textContent=on?'Sound on':'Sound off';if(on)sounds.play();}catch{$('status').textContent='Audio is unavailable in this browser.';}};
 window.addEventListener('edge-agent-state',e=>{galaxy.working(e.detail.state==='running'?e.detail.role:null);sounds.play(e.detail.state==='running'?'start':e.detail.state==='failed'?'error':'done');});
 let lastClosed=state.closed.length;const oldQuote=$('quote').onclick;$('quote').onclick=()=>{oldQuote();if(state.closed.length>lastClosed){const close=state.closed.at(-1);moneyScene.money(close.pnl);sounds.play(close.pnl<0?'error':'done');}lastClosed=state.closed.length;};
+
+mountParallax();page('parallax');
