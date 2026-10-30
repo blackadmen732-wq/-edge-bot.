@@ -3,6 +3,8 @@ import {object,string,InputError,diagnose,calibrate,safeError} from './core.ts';
 import type {Store} from './store.ts';
 import {runAgent,type AgentConfig} from './agent.ts';
 import {collectConnections} from './connections.ts';
+import {analyzeNumericSeries} from './patterns.ts';
+import {buildResearchUniverse} from './universe.ts';
 const uuid=(v:unknown)=>{
  const id=string(v,'id');if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw new InputError('Invalid ID');return id;
 };
@@ -10,6 +12,8 @@ const schema=(properties:Record<string,unknown>={},required:string[]=[])=>({type
 const text={type:'string'};
 export const TOOLS=[
  {name:'get_data_health',description:'Read research source freshness, coverage, queue and configuration health.',inputSchema:schema()},
+ {name:'get_universe',description:'Read source, dataset, experiment and hypothesis metadata as a private evidence graph with explicit links only.',inputSchema:schema()},
+ {name:'analyze_numeric_series',description:'Measure time-ordered numerical patterns; research only, never a trade order or profitability claim.',inputSchema:schema({name:text,source:text,market:text,asOf:text,points:{type:'array',minItems:30,maxItems:2000,items:{type:'object'}}},['name','source','market','asOf','points'])},
  {name:'get_connections',description:'Read provider configuration presence and collector results; never returns secret values.',inputSchema:schema()},
  {name:'list_datasets',description:'List immutable research datasets and their fingerprints.',inputSchema:schema()},
  {name:'create_dataset',description:'Snapshot recorded examples, or supplied educational observations, for reproducible testing.',inputSchema:schema({name:text,examples:{type:'array',maxItems:5000,items:{type:'object'}}},['name'])},
@@ -33,6 +37,8 @@ export class Service {
   switch(name) {
    case 'get_data_health':result={...await this.store.health(),aiConfigured:!!this.agentConfig.key||!!await this.store.providerKey('xai'),aiModel:this.agentConfig.model??'grok-4.3'};break;
    case 'get_connections':result=await this.store.connections();break;
+   case 'get_universe':{const h=await this.store.health();result=buildResearchUniverse({sources:h.sources??[],datasets:await this.store.datasets(),jobs:await this.store.jobs(),models:await this.store.models(),hypotheses:await this.store.hypotheses()});break;}
+   case 'analyze_numeric_series':result=analyzeNumericSeries(a as any);break;
    case 'list_datasets':result=await this.store.datasets();break;
    case 'create_dataset':result=await this.store.createDataset(a,actor);break;
    case 'diagnose_dataset':result=diagnose((await this.store.dataset(uuid(a.datasetId))).examples);break;
