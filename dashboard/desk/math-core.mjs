@@ -62,3 +62,31 @@ export function planningMath({position,goal,penalty}){
   'After observing the real next state, recalculate. This is a one-step illustration of receding-horizon planning.'
  ],canTrade:false};
 }
+
+
+// One-head scaled dot-product attention, as in a minimal transformer demonstration.
+// This function computes attention weights; it does not load or train any model.
+export function attentionMath({query,keys,values}){
+ if(!Array.isArray(query)||query.length<1||query.length>16)throw new Error('Query must contain 1–16 numbers.');
+ query.forEach((v,i)=>num(v,'Query '+i,-100,100));
+ if(!Array.isArray(keys)||keys.length<2||keys.length>12)throw new Error('Enter 2–12 key vectors.');
+ if(!Array.isArray(values)||values.length!==keys.length)throw new Error('Supply one value per key.');
+ for(const [i,key] of keys.entries()){
+  if(!Array.isArray(key)||key.length!==query.length)throw new Error('Key '+(i+1)+' must match query dimension.');
+  key.forEach((v,j)=>num(v,'Key '+i+':'+j,-100,100));
+  num(values[i],'Value '+(i+1),-1000,1000);
+ }
+ const d=query.length;
+ const raw=keys.map(key=>query.reduce((acc,x,j)=>acc+x*key[j],0));
+ const scores=raw.map(v=>v/Math.sqrt(d));
+ const top=Math.max(...scores),exponents=scores.map(s=>Math.exp(s-top)),denom=exponents.reduce((a,b)=>a+b,0);
+ const weights=exponents.map(x=>x/denom);
+ const output=weights.reduce((acc,weight,i)=>acc+weight*values[i],0);
+ return {dimension:d,rawScores:raw,scaledScores:scores,weights,output,steps:[
+  'Similarity: dot products q · kᵢ = '+raw.map(x=>x.toFixed(4)).join(', '),
+  'Scale each dot product by √d = '+Math.sqrt(d).toFixed(4)+': '+scores.map(x=>x.toFixed(4)).join(', '),
+  'Softmax converts scaled scores to weights: '+weights.map(x=>x.toFixed(4)).join(' + ')+' = 1.',
+  'Context output = Σ(weightᵢ × valueᵢ) = '+output.toFixed(6)+'.',
+  'These weights are mathematical relevance scores, not explanations of a real trained model.'
+ ],canTrade:false};
+}
