@@ -21,6 +21,7 @@ export class Store {
    group by s.id order by s.track,s.id`;
   const [counts] = await this.sql`select (select count(*)::int from edgebot_research.datasets) as datasets,
    (select count(*)::int from edgebot_research.examples) as examples,
+   (select count(*)::int from edgebot_research.events where action='numeric_analysis') as numeric_analyses,
    (select count(*)::int from edgebot_research.jobs where status in ('pending','running')) as queued,
    (select count(*)::int from edgebot_research.jobs where status='failed') as failed,
    (select count(*)::int from edgebot_research.usage where created_at>=date_trunc('day',now())) as ai_requests_today,

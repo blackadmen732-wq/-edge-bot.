@@ -1,6 +1,7 @@
 import {mountWorkflow} from './workflow.mjs';
 import {mountImmersive} from './immersive.mjs';
 import {mountParallax} from './parallax.mjs';
+import {mountCalculations} from './calculations.mjs';
 import {mountScene,soundSystem} from './scene.mjs';
 import {mountAgentChat} from './chat.mjs';
 import {mountCosmos} from './cosmos.mjs';
@@ -21,7 +22,7 @@ $('reset').onclick=()=>{if(state.events.length&&!confirm('Export first if needed
 $('import').onchange=async()=>{try{const f=$('import').files[0];if(!f)return;if(f.size>2000000)throw Error('Maximum file size is 2 MB');const rows=JSON.parse(await f.text());if(!Array.isArray(rows)||rows.length>500)throw Error('Import an array of at most 500 candidates');let accepted=0;const cfg={stopPct:Number($('stop').value),trailPct:Number($('trail').value),costBps:Number($('cost').value)};for(const c of rows)if(processCandidate(state,c,cfg).accepted)accepted++;$('import-result').textContent=`${rows.length} evaluated · ${accepted} paper entries · ${rows.length-accepted} rejected`;render();}catch(e){$('import-result').textContent=e.message;}};
 $('quote').onclick=()=>action(()=>markPosition(state,$('quote-mint').value,Number($('quote-price').value),$('quote-time').value));$('search').oninput=render;$('export').onclick=()=>download('edge-paper-session.json',state);
 $('sample').onclick=()=>download('candidate-template.json',[{mint:'REPLACE_WITH_TOKEN_MINT',observedAt:new Date().toISOString(),mintRevoked:null,freezeRevoked:null,liquidityVerified:null,devRugLinked:null,bundledLaunch:null,top10Percent:null,volume1hUsd:null,score:null,scoreVersion:'REPLACE_WITH_MODEL_VERSION',price:null}]);
-const providers=[['Existing research API','Available through authenticated research workspace','../research/index.html'],['Grok / xAI','Provider key required; secure setup in research workspace','https://console.x.ai/'],['Solana RPC + streaming','Adapter and provider account required','https://www.helius.dev/'],['Pump.fun / PumpSwap','Launch and migration decoder not connected','https://pump.fun/'],['Bonk.fun / Raydium','LaunchLab and pool decoders not connected','https://docs.raydium.io/'],['Meteora','Pool-specific evidence decoder not connected','https://docs.meteora.ag/']];for(const [name,status,url] of providers){const c=el('article','','role');c.append(el('h2',name),el('p',status));const a=el('a','Open provider ↗');a.href=url;a.target='_blank';a.rel='noopener noreferrer';c.append(a);$('providers').append(c);}page('overview');render();
+const providers=[['Existing research API','Available through authenticated research workspace','../research/index.html'],['Optional AI · dormant','Prepared for later; no paid AI is needed for archive calculations','https://console.x.ai/'],['Helius Solana RPC','Backend credential configured; read-only network observations','https://dashboard.helius.dev/'],['Jupiter prices','Backend credential configured; read-only reference prices','https://portal.jup.ag/'],['Pump.fun / PumpSwap','Launch and migration decoder not connected','https://pump.fun/'],['Bonk.fun / Raydium','LaunchLab and pool decoders not connected','https://docs.raydium.io/'],['Meteora','Pool-specific evidence decoder not connected','https://docs.meteora.ag/']];for(const [name,status,url] of providers){const c=el('article','','role');c.append(el('h2',name),el('p',status));const a=el('a','Open provider ↗');a.href=url;a.target='_blank';a.rel='noopener noreferrer';c.append(a);$('providers').append(c);}page('overview');render();
 
 mountAgentChat($('agent-chat'),()=>state);
 
@@ -38,10 +39,11 @@ $('sound-toggle').onclick=async()=>{try{const on=await sounds.toggle();$('sound-
 window.addEventListener('edge-agent-state',e=>{galaxy.working(e.detail.state==='running'?e.detail.role:null);sounds.play(e.detail.state==='running'?'start':e.detail.state==='failed'?'error':'done');});
 let lastClosed=state.closed.length;const oldQuote=$('quote').onclick;$('quote').onclick=()=>{oldQuote();if(state.closed.length>lastClosed){const close=state.closed.at(-1);moneyScene.money(close.pnl);sounds.play(close.pnl<0?'error':'done');}lastClosed=state.closed.length;};
 
-mountParallax();page('parallax');
+mountParallax();mountCalculations(page);page('parallax');
 
 const observatory=mountImmersive(page);page('observatory');
 document.querySelector('.brand').onclick=e=>{e.preventDefault();page('observatory');};
 observatory.setVideo('https://d8j0ntlcm91z4.cloudfront.net/user_36nirQ0Q9RM6LsQk7YYAZf75ceZ/hf_20261030_013817_1f3f5ad4-93fb-4ece-9e50-f9fe7247444c.mp4');
 
 mountWorkflow(()=>metrics(state));
+

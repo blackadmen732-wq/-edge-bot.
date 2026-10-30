@@ -22,3 +22,4 @@ export async function chat(service:Service,input:unknown,actor:string){
  return {role,reply:reply.slice(0,12000),model,capabilities:'research_conversation_only'};
  }catch(e){await service.store.finishUsage(usage,null,'failed');throw e;}
 }
+

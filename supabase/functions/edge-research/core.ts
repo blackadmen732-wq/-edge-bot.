@@ -111,3 +111,4 @@ export async function digest(value: unknown): Promise<string> {
 export function safeError(e: unknown): string {
   return e instanceof InputError ? e.message : 'Operation failed; inspect the server run ID';
 }
+

@@ -1,15 +1,24 @@
+import {listArchiveSeries,analyzeArchive,savedNumericResults,numericResult,analyzeReadyArchive,addNumericUniverse} from './numeric-archive.ts';
 import {chat} from './chat.ts';
 import {object,string,InputError,diagnose,calibrate,safeError} from './core.ts';
 import type {Store} from './store.ts';
 import {runAgent,type AgentConfig} from './agent.ts';
 import {collectConnections} from './connections.ts';
+import {analyzeNumericSeries} from './patterns.ts';
+import {buildResearchUniverse} from './universe.ts';
 const uuid=(v:unknown)=>{
  const id=string(v,'id');if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw new InputError('Invalid ID');return id;
 };
 const schema=(properties:Record<string,unknown>={},required:string[]=[])=>({type:'object',properties,required,additionalProperties:false});
 const text={type:'string'};
 export const TOOLS=[
+ {name:'list_archive_series',description:'List archived price series, distinct samples and readiness for numeric measurements.',inputSchema:schema()},
+ {name:'analyze_archived_series',description:'Snapshot one archived series and persist deterministic measurements without AI.',inputSchema:schema({seriesId:text,asOf:text},['seriesId'])},
+ {name:'list_numeric_results',description:'List persisted numeric snapshots and measurement reports.',inputSchema:schema()},
+ {name:'get_numeric_result',description:'Read a saved numerical snapshot, archive IDs and its reproducible report.',inputSchema:schema({id:text},['id'])},
  {name:'get_data_health',description:'Read research source freshness, coverage, queue and configuration health.',inputSchema:schema()},
+ {name:'get_universe',description:'Read source, dataset, experiment and hypothesis metadata as a private evidence graph with explicit links only.',inputSchema:schema()},
+ {name:'analyze_numeric_series',description:'Measure time-ordered numerical patterns; research only, never a trade order or profitability claim.',inputSchema:schema({name:text,source:text,market:text,asOf:text,points:{type:'array',minItems:30,maxItems:2000,items:{type:'object'}}},['name','source','market','asOf','points'])},
  {name:'get_connections',description:'Read provider configuration presence and collector results; never returns secret values.',inputSchema:schema()},
  {name:'list_datasets',description:'List immutable research datasets and their fingerprints.',inputSchema:schema()},
  {name:'create_dataset',description:'Snapshot recorded examples, or supplied educational observations, for reproducible testing.',inputSchema:schema({name:text,examples:{type:'array',maxItems:5000,items:{type:'object'}}},['name'])},
@@ -32,7 +41,13 @@ export class Service {
   let result:any;
   switch(name) {
    case 'get_data_health':result={...await this.store.health(),aiConfigured:!!this.agentConfig.key||!!await this.store.providerKey('xai'),aiModel:this.agentConfig.model??'grok-4.3'};break;
+   case 'list_archive_series':result={series:await listArchiveSeries(this.store)};break;
+   case 'analyze_archived_series':result=await analyzeArchive(this.store,a,actor);break;
+   case 'list_numeric_results':result={results:await savedNumericResults(this.store)};break;
+   case 'get_numeric_result':result=await numericResult(this.store,a.id);break;
    case 'get_connections':result=await this.store.connections();break;
+   case 'get_universe':{const h=await this.store.health();result=buildResearchUniverse({sources:h.sources??[],datasets:await this.store.datasets(),jobs:await this.store.jobs(),models:await this.store.models(),hypotheses:await this.store.hypotheses()});result=addNumericUniverse(result,await savedNumericResults(this.store));break;}
+   case 'analyze_numeric_series':result=analyzeNumericSeries(a as any);break;
    case 'list_datasets':result=await this.store.datasets();break;
    case 'create_dataset':result=await this.store.createDataset(a,actor);break;
    case 'diagnose_dataset':result=diagnose((await this.store.dataset(uuid(a.datasetId))).examples);break;
@@ -62,5 +77,6 @@ export class Service {
  }
  async promote(id:unknown,actor:string){return this.store.promote(uuid(id),actor);}
  async configure(input:unknown,actor:string){return this.store.setProviderKey(input,actor);}
- async collect(){return collectConnections(this.store);}
+ async collect(){const collected=await collectConnections(this.store);if(collected.status==='busy')return collected;return {...collected,numericAnalyses:await analyzeReadyArchive(this.store)};}
 }
+

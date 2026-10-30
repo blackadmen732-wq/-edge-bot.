@@ -1,5 +1,8 @@
 # Parallax connection inventory — 2026-10-30
 
+**Latest:** the private archive-to-analysis pipeline is now deployed as edge-research version 6. Universe and saved numeric-analysis endpoints are working; see [private-pipeline.md](private-pipeline.md). The earlier gap audit below records the state before this integration.
+
+
 ## Verified deployment
 
 Supabase project: mhahkbssltukjhusjsjf. edge-research version 4 is active.
