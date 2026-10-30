@@ -1,3 +1,4 @@
+import {mountImmersive} from './immersive.mjs';
 import {mountParallax} from './parallax.mjs';
 import {mountScene,soundSystem} from './scene.mjs';
 import {mountAgentChat} from './chat.mjs';
@@ -37,3 +38,7 @@ window.addEventListener('edge-agent-state',e=>{galaxy.working(e.detail.state==='
 let lastClosed=state.closed.length;const oldQuote=$('quote').onclick;$('quote').onclick=()=>{oldQuote();if(state.closed.length>lastClosed){const close=state.closed.at(-1);moneyScene.money(close.pnl);sounds.play(close.pnl<0?'error':'done');}lastClosed=state.closed.length;};
 
 mountParallax();page('parallax');
+
+const observatory=mountImmersive(page);page('observatory');
+document.querySelector('.brand').onclick=e=>{e.preventDefault();page('observatory');};
+observatory.setVideo('https://d8j0ntlcm91z4.cloudfront.net/user_36nirQ0Q9RM6LsQk7YYAZf75ceZ/hf_20261030_013817_1f3f5ad4-93fb-4ece-9e50-f9fe7247444c.mp4');
