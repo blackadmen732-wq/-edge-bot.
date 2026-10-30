@@ -25,17 +25,36 @@ Unauthenticated health requests returned HTTP 401.
 | mempool.space | Bitcoin fee estimates | NEW: deployed, 1 archived observation |
 | USGS | Hourly earthquake feed | NEW: deployed, 1 archived observation |
 | World Bank | Latest US annual GDP history | NEW: deployed, 10 archived observations |
-| [Helius](https://dashboard.helius.dev/) | Dedicated read-only Solana RPC | Adapter deployed; requires sign-in and provider key |
-| [Jupiter](https://portal.jup.ag/) | SOL reference price | Adapter deployed; requires sign-in and provider key |
+| [Helius](https://dashboard.helius.dev/) | Dedicated read-only Solana RPC | CONNECTED: existing key stored in Vault; cloud collector archived first observation |
+| [Jupiter](https://portal.jup.ag/) | SOL reference price | CONNECTED: Parallax Research server key stored in Vault; cloud collector archived first price observation |
 | [Alpha Vantage](https://www.alphavantage.co/support/api-key/) | Daily equity and WTI history | Existing adapters; no research Vault credential |
 | [The Odds API](https://the-odds-api.com/) | Existing read-only sports observations | Existing adapter; no research Vault credential; no account created |
-| [xAI](https://console.x.ai/) | Existing bounded research agent | Parallax team setup completed; console balance $0; backend health reports AI unconfigured |
+| [xAI](https://console.x.ai/) | Optional future research agent | DORMANT by owner choice. Workspace exists; credit purchase required for another key; nothing purchased |
 | [Resend](https://resend.com/domains) | Research notifications | Only domain is failed; backend provider key missing; sender and recipient configuration incomplete |
 | [OANDA](https://developer.oanda.com/) | Potential intraday FX history | No adapter or account connected; requires eligible account |
 | [Higgsfield](https://higgsfield.ai/) | Optional generated visual assets | No application API credential/integration verified in this task |
 
-Helius and Jupiter sign-in pages were opened and left available. Neither was registered or connected.
+Helius onboarding completed using its free plan and existing default key. Jupiter organization Parallax and team Parallax Research created, with a server key for read-only price requests. Both credentials are saved in encrypted Vault; production collection returned received with inserted=1 for each. Their account pages remain available.
 No paid subscription, credit purchase, trading account, wallet, trade, swap, or email send was performed.
+
+## Owner scope and latest operational audit
+
+This is a PRIVATE SINGLE-USER research tool. There is no requirement for public signup, customers, billing plans or multi-tenant product infrastructure. Spend authorization is $0. AI adapters may remain available but dormant. Do not purchase credits, enable auto top-up, subscribe to paid plans or add AI providers.
+
+Rechecked Supabase: 285 observations across 13 sources; 0 datasets, 0 analysis jobs, 0 models and 0 hypotheses. Both research Cron jobs are enabled. Recent worker schedule entries succeeded, but this only proves the SQL invocation ran; it does not prove an analysis happened. Manual authenticated collections returned HTTP 200 and confirmed both new keyed sources.
+
+GitHub remains split: main lacks the research workspace; PR #3 contains the research backend, PR #5 adds the universe endpoint and numerical pattern tool/UI, and PR #6 contains the currently deployed expanded collectors. PR #5 code is not in deployed version 4. Its frontend requests ?task=universe, while deployed HTTP code does not implement that task. These branches must be reconciled and tested together before the private UI can load its graph.
+
+The existing numeric pattern tool in PR #5 accepts manually supplied 30–2000 timestamped values. The archive is not automatically converted into compatible series. Existing datasets expect prediction/outcome examples, which are not interchangeable with raw price snapshots. Build a numeric-series snapshot path with source/asset selection, availability timestamps, fingerprints and persisted descriptive results. Do not invent probabilities or labels to fill the outcomes schema.
+
+The current desk simulator uses browser localStorage; paper balances and agent events are not a Supabase-backed ledger. Its animated roles do not independently run research jobs. Make UI state reflect queued/running/succeeded/failed backend work.
+
+Priority work, in order: reconcile PR #3/#5/#6; connect the private frontend origin and owner authentication; connect archive-to-series extraction and deterministic pattern calculations; persist results with provenance; expose real worker status; add historical candles only where the chosen calculation requires them. Keep the existing collector and analysis-only settings intact.
+
+Private storage/realtime: no research-named storage bucket or research table in the supabase_realtime publication was found. This does not prove no private bucket exists under another name, and Broadcast does not require publication membership. These integrations were not verified; polling the existing authenticated API is sufficient for the first working private version.
+
+Alpha Vantage form is filled for Parallax with the owner account email and Student category, but not submitted because acquisition accepts provider terms. xAI key creation opens a credit purchase with auto-top-up information; the purchase was not submitted. Resend still has failed DKIM/SPF records. Its domain details and the matching Namecheap Advanced DNS page were opened; Namecheap requires owner sign-in. FRED is a possible later macro-data addition, and Sentry a possible later monitor, but neither is required to make the current private system run. No new accounts were created for either.
+
 The public feeds need no provider credentials for the tested endpoints; access and provider terms can change.
 
 ## Infrastructure inventory
