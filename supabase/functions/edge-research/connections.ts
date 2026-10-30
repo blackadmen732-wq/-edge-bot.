@@ -1,6 +1,8 @@
+import {EXTRA_PROVIDERS,collectExtras} from './extra-connections.ts';
 import {InputError,object,string} from './core.ts';
 import type {Store} from './store.ts';
 export const PROVIDERS={
+ ...EXTRA_PROVIDERS,
  xai:{name:'Grok AI',keyUrl:'https://console.x.ai/',purpose:'AI investigation'},
  alphavantage:{name:'Alpha Vantage',keyUrl:'https://www.alphavantage.co/support/api-key/',purpose:'Daily equity and commodity research data'},
  odds:{name:'The Odds API',keyUrl:'https://the-odds-api.com/',purpose:'Read-only sports research observations'},
@@ -90,6 +92,8 @@ export async function collectConnections(store:Store,fetcher:typeof fetch=fetch)
     }return rows;
    }),
   ]);
+  results.push(...await collectExtras(store,fetcher));
   await store.audit('collector','collect_connections',{results});return {status:'completed',results};
  }finally{await store.releaseCollection(lease);}
 }
+

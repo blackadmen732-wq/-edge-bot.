@@ -1,3 +1,4 @@
+import {EXTRA_SOURCES} from './extra-connections.ts';
 import { InputError, object, string, date, examples, digest, type Example } from './core.ts';
 import {PROVIDERS,providerName,providerKey,type Provider} from './connections.ts';
 export interface Sql {
@@ -46,7 +47,7 @@ export class Store {
    if (JSON.stringify(payload).length>12000) throw new InputError('Observation payload too large');
    const availableAt=date(x.availableAt,'availableAt');
    if(Date.parse(availableAt)>Date.now()+5000) throw new InputError('availableAt cannot be in the future');
-   const nativeSources=['kraken.spot','frankfurter.fx','nws.forecast','alphavantage.equities','alphavantage.commodities','odds.sports'];
+   const nativeSources=[...EXTRA_SOURCES.map(s=>s.id),'kraken.spot','frankfurter.fx','nws.forecast','alphavantage.equities','alphavantage.commodities','odds.sports'];
    if(!String(x.source).endsWith('.import')&&!(native&&nativeSources.includes(x.source)))throw new InputError('Imports must use an import source');
    return {source:string(x.source,'source'),externalId:string(x.externalId,'externalId'),
     eventAt:date(x.eventAt,'eventAt'),availableAt,payload};
@@ -161,7 +162,7 @@ export class Store {
  async connections() {
   const names=await this.sql`select name from vault.secrets where name like 'edgebot_research_key_%'`;
   const last=await this.sql`select details,created_at from edgebot_research.events where action='collect_connections' order by created_at desc limit 1`;
-  return {providers:Object.entries(PROVIDERS).map(([id,details])=>({id,...details,keyConfigured:names.some(r=>r.name==='edgebot_research_key_'+id)})),lastCollection:last[0]??null};
+  return {publicFeeds:EXTRA_SOURCES.filter(s=>!('key' in s)).map(s=>({id:s.id,name:s.name,keyRequired:false})),providers:Object.entries(PROVIDERS).map(([id,details])=>({id,...details,keyConfigured:names.some(r=>r.name==='edgebot_research_key_'+id)})),lastCollection:last[0]??null};
  }
  async setProviderKey(input:unknown,actor:string) {
   const x=object(input),provider=providerName(x.provider),value=providerKey(x.value),name='edgebot_research_key_'+provider;
@@ -200,3 +201,4 @@ export class Store {
   });
  }
 }
+

@@ -8,7 +8,7 @@ test('key validation permits only configured providers without exposing supplied
 });
 test('public connectors collect without keys and keep their source identity and frequency',async()=>{
  const imported:any[]=[];let released=false;const requested:string[]=[];
- const store:any={claimCollection:async()=>'lease',collectionDue:async()=>true,providerKey:async()=>null,
+ const store:any={claimCollection:async()=>'lease',collectionDue:async(source:string)=>!['coinbase.spot','coingecko.markets','dexscreener.solana','solana.network','defillama.tvl','mempool.fees','usgs.earthquakes','worldbank.gdp','helius.network','jupiter.prices'].includes(source),providerKey:async()=>null,
   importObservations:async(rows:any[],_actor:string,native:boolean)=>{assert(native);imported.push(...rows);return {inserted:rows.length};},markCollected:async()=>{},audit:async()=>{},releaseCollection:async()=>{released=true;}};
  const fetcher:any=async(input:any)=>{const u=new URL(String(input));requested.push(u.hostname);
   if(u.hostname==='api.kraken.com')return Response.json({error:[],result:{XXBTZUSD:{c:['123','1']},XETHZUSD:{c:['45','1']}}});
@@ -37,3 +37,4 @@ test('agent credentials cannot change provider keys',async()=>{
  const response=await h(new Request('https://example.test/?task=credentials',{method:'POST',headers:{authorization:'Bearer agent','content-type':'application/json'},body:JSON.stringify({provider:'xai',value:'private-test-key'})}));
  assert.equal(response.status,403);assert.equal(called,false);
 });
+
