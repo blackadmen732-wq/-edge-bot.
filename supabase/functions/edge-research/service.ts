@@ -1,3 +1,4 @@
+import {chat} from './chat.ts';
 import {object,string,InputError,diagnose,calibrate,safeError} from './core.ts';
 import type {Store} from './store.ts';
 import {runAgent,type AgentConfig} from './agent.ts';
@@ -45,6 +46,7 @@ export class Service {
   }
   await this.store.audit(actor,'tool:'+name,{ok:true});return result;
  }
+ async chat(input:unknown,actor:string){return chat(this,input,actor);}
  async worker() {
   const job=await this.store.claim();if(!job)return {processed:0};
   try {

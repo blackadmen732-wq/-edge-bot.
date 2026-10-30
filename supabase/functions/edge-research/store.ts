@@ -32,6 +32,10 @@ export class Store {
  async jobs() {return this.sql`select id,kind,dataset_id,status,attempts,created_at,finished_at,error from edgebot_research.jobs order by created_at desc limit 30`;}
  async models() {return this.sql`select id,job_id,parameters,state,created_at from edgebot_research.models order by created_at desc limit 30`;}
  async hypotheses() {return this.sql`select id,question,evidence,status,created_at from edgebot_research.hypotheses order by created_at desc limit 30`;}
+ async chatHistory(actor:string,role:string) {
+  const rows=await this.sql`select details,created_at from edgebot_research.events where actor=${actor} and action='chat_turn' and details->>'role'=${role} order by id desc limit 8`;
+  return rows.reverse().map(r=>({...r.details,at:r.created_at}));
+ }
  async audit(actor: string, action: string, details: any = {}) {
   await this.sql`insert into edgebot_research.events(actor,action,details) values(${actor},${action},${this.sql.json(details)})`;
  }
@@ -137,7 +141,7 @@ export class Store {
    return {id,state:'active',scope:'research_only'};
   });
  }
- async reserveUsage(jobId:string,model:string) {
+ async reserveUsage(jobId:string|null,model:string) {
   return this.sql.begin(async tx=>{
    await tx`select pg_advisory_xact_lock(174523,2)`;
    const [r]=await tx`select count(*)::int as n from edgebot_research.usage where created_at>=date_trunc('day',now())`;

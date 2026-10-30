@@ -53,6 +53,7 @@ export function handler(deps:HttpDeps){return async(req:Request):Promise<Respons
   if(task==='worker')return respond(await deps.service.worker());
   if(task==='collect')return respond(await deps.service.collect());
   const input=await body(req);
+  if(task==='chat')return respond(await deps.service.chat(input,actor));
   if(task==='credentials'){
    if(!owner)return respond({error:'Owner credential required'},403);
    return respond(await deps.service.configure(input,actor));
