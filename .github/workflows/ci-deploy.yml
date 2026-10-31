@@ -31,6 +31,23 @@ jobs:
       - name: Dashboard UI tests
         run: node --test tests/ui/parallax-ui.test.mjs
 
+  # The real engine end to end (in-memory Postgres, fake Kalshi/odds/email). Reported on its own so a
+  # problem here is visible without blocking unit-tested deploys.
+  e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: npm ci --prefix tests/e2e/db --no-audit --no-fund
+      - run: bash tests/e2e/run.sh
+
   deploy:
     needs: test
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
