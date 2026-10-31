@@ -1,0 +1,9 @@
+# Minimal Supabase CLI config so `supabase functions deploy` works in CI.
+# Both functions do their own token checks, so the platform JWT check is off (as it is in production).
+project_id = "edge-bot"
+
+[functions.edgebot]
+verify_jwt = false
+
+[functions.edge-research]
+verify_jwt = false
