@@ -69,7 +69,7 @@ export class Store {
  }
  async createDataset(input: any, actor: string) {
   const x=object(input),name=string(x.name,'name');
-  const inputRows=x.examples ?? (await this.sql`select value from edgebot_research.examples order by id limit 5001`).map(r=>r.value);
+  const inputRows=x.examples ?? (await this.sql`select value from edgebot_research.examples order by id desc limit 5000`).map(r=>r.value);
   const rows=examples(inputRows).sort((a,b)=>a.predictedAt.localeCompare(b.predictedAt)||a.id.localeCompare(b.id));
   if(!rows.length) throw new InputError('No examples yet; import a dataset or wait for recorded outcomes');
   const fingerprint=await digest(rows);
