@@ -621,6 +621,8 @@ async function tick() {
     await sql`delete from edgebot.signals where created_at < now() - interval '21 days'`;
     await sql`delete from edgebot.odds where fetched_at < now() - interval '21 days'`;
     await sql`delete from edgebot.runs where started_at < now() - interval '30 days'`;
+    // Unfilled market-making quotes pile up by the thousands a day; filled ones stay (fills point at them).
+    await sql`delete from edgebot.mm_quotes where status = 'expired' and closed_at < now() - interval '30 days'`.catch(() => {});
   }
   return out;
 }
