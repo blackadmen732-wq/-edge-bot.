@@ -52,6 +52,24 @@ These are in the code (`supabase/functions/edgebot/lib/rules.ts`). Settings in t
 - **Dashboard:** a Claude dashboard called "Edge Bot" with live numbers from the database.
 - **Leagues:** college football, NFL, and the English Championship (second-tier English soccer). Less-watched games are where prices are most often off.
 
+## How code gets to Supabase (one way only)
+
+GitHub `main` is the only source of truth. Every push to `main` runs all the tests, then deploys both Supabase functions (`edgebot` and `edge-research`) automatically through `.github/workflows/ci-deploy.yml`. Pull requests run the tests but never deploy.
+
+Rules that stop the two drifting apart again:
+
+1. Never deploy from a feature branch, a chat, or the Supabase dashboard. Merge to `main` and let the workflow deploy.
+2. Database changes go in `supabase/migrations/` and are applied once by hand (SQL Editor or Claude). The workflow does not touch the database.
+3. If a deploy fails, the old version keeps running. Fix forward on `main`.
+
+**One-time setup:**
+
+1. Create a Supabase access token at https://supabase.com/dashboard/account/tokens.
+2. In GitHub: this repo → Settings → Secrets and variables → Actions → New repository secret. Name `SUPABASE_ACCESS_TOKEN`, value the token.
+3. If runs show "startup failure", GitHub Actions is off or blocked for this account: check repo Settings → Actions → General ("Allow all actions"), and account Settings → Billing for a spending block on private repos.
+
+Until the token is added, the workflow still runs the tests and skips the deploy with a warning.
+
 ## What you need to do (about 10 minutes)
 
 The bot can't find bets until it has a sportsbook odds key. Secrets go into Supabase yourself, never into chat.
