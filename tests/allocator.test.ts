@@ -62,6 +62,11 @@ test("10% drawdown sends an agent to the floor; it is never removed", () => {
   assert(d.weight > 0);
 });
 
+test("a near-zero edge never produces a track-record length too big to store", () => {
+  const r = allocate([base("tiny", { history: [0, -0.1], equity: 100.0000002, prevEquity: 100 }), base("b")]);
+  assert(r[0].minDays === null || r[0].minDays <= 36_500);
+});
+
 test("5% drawdown halves size", () => {
   const r = allocate([base("dd", { equity: 94, prevEquity: 94, peak: 100 }), base("ok")]);
   assert.equal(r[0].riskMult, 0.5);

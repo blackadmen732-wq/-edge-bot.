@@ -127,7 +127,8 @@ export function allocate(days: AgentDay[]): AgentResult[] {
     mult = status === "floor" ? ALLOC.MIN_MULT : clamp(mult, ALLOC.MIN_MULT, ALLOC.MAX_MULT);
     return {
       agent: x.d.agent, score: x.score, logw: x.logw, psr: x.s?.psr ?? null,
-      minDays: x.s && Number.isFinite(x.s.minDays) ? x.s.minDays : null,
+      // A near-zero Sharpe can need billions of days; anything past ~100 years is just "not provable".
+      minDays: x.s && Number.isFinite(x.s.minDays) && x.s.minDays <= 36_500 ? x.s.minDays : null,
       weight: share, riskMult: mult, status, drawdown: x.drawdown, reason,
     };
   });

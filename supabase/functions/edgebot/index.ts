@@ -650,7 +650,8 @@ async function mmRun(runId: number) {
   const m: MmSettings = effectiveMm(row as any);
   // The daily allocator scales quote size: smaller while unproven or in drawdown, bigger only once edge is proven.
   const mult = await riskMult("weather_mm");
-  m.mm_quote_size = Math.floor(Math.min(Math.max(m.mm_quote_size * mult, 0), MM_HARD.MAX_QUOTE_SIZE));
+  // Keep at least 1 contract (unless switched off with size 0) so a floored agent still produces data.
+  if (m.mm_quote_size > 0) m.mm_quote_size = Math.max(1, Math.floor(Math.min(m.mm_quote_size * mult, MM_HARD.MAX_QUOTE_SIZE)));
   const now = Date.now();
   const nowDate = new Date(now);
   const notes: string[] = [];
@@ -876,8 +877,9 @@ async function allocateRun() {
   const snaps = await agentSnapshots();
   const days: AgentDay[] = [];
   for (const a of snaps) {
-    const hist = await sql`select date, equity, peak_equity, score, logw, status from edgebot.agent_ledger
-                           where agent = ${a.agent} and date < ${today} order by date asc limit 1000`;
+    // Newest 1,000 days, then back into date order (oldest first).
+    const hist = (await sql`select date, equity, peak_equity, score, logw, status from edgebot.agent_ledger
+                            where agent = ${a.agent} and date < ${today} order by date desc limit 1000`).reverse();
     const last = hist.at(-1);
     days.push({
       agent: a.agent, equity: a.equity, prevEquity: last ? Number(last.equity) : null,
