@@ -167,6 +167,19 @@ The weather series tickers are a best guess. If the run log says a series has no
 
 **Plain truth:** published tests found free forecasts don't beat Kalshi's weather prices, and the weather book has tightened a lot in 2026. Market making could still work because it earns the gap instead of predicting, but it loses money when faster, better-informed traders pick off its prices. Judge it on the "picked off" score and profit after a few hundred fills, not a few days.
 
+## Agent allocator (paper only): no elimination, compound only proven edge
+
+Once a day (06:05 UTC) `?task=allocate` scores every agent and moves fake capital between them. Code: `lib/allocator.ts`, table `edgebot.agent_ledger`.
+
+- **Score:** each agent's daily return in risk units (2% of equity = 1), clipped to ±1.
+- **Weights:** Hedge (multiplicative weights, η 0.2) with a 99%/day forgetting factor, so winners grow like compound interest without betting everything on one lucky streak.
+- **Floor:** every agent keeps at least 12%. Nobody is ever deleted, so a loser keeps producing data and can come back.
+- **Gate:** an agent gets more than an equal share, or a size above normal, only after its edge is statistically supported (Probabilistic Sharpe ≥ 0.95 over at least 30 days and its minimum track record) *and* its early signal is positive (markout for market making, beat-the-close for football).
+- **Drawdown ladder:** 5% below its peak halves size; 10% sends it to minimum size until it recovers half and passes the gate again.
+- **Caps:** at most 35% of capital to one agent (two-agent setups excepted), size between 0.25× and 1.5× normal, and every hard cap in `rules.ts` and `mm.ts` still applies on top.
+
+Today it steers the weather market maker's quote size. Football and Forex Lab get scored but don't change size until they have results.
+
 ## How to read the results
 
 - **Won–lost and profit over a few dozen bets are mostly luck.** A strategy with no edge wins 57%+ of 50 coin-flip bets about 1 time in 6.

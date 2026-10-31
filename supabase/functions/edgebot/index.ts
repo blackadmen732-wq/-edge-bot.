@@ -33,6 +33,8 @@ import {
 import type { MmSettings } from "./lib/mm.ts";
 import { forecastHighs } from "./lib/weather.ts";
 import { analyzeForex } from "./lib/forex.ts";
+import { allocate } from "./lib/allocator.ts";
+import type { AgentDay, AgentStatus } from "./lib/allocator.ts";
 
 export const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: Number(Deno.env.get("EDGEBOT_DB_MAX_CONN") ?? 3), idle_timeout: 20 });
 
@@ -646,6 +648,10 @@ async function mmRun(runId: number) {
   const [row] = await sql`select * from edgebot.settings where id = 1`;
   const base = effectiveSettings(row as unknown as Settings);
   const m: MmSettings = effectiveMm(row as any);
+  // The daily allocator scales quote size: smaller while unproven or in drawdown, bigger only once edge is proven.
+  const mult = await riskMult("weather_mm");
+  // Keep at least 1 contract (unless switched off with size 0) so a floored agent still produces data.
+  if (m.mm_quote_size > 0) m.mm_quote_size = Math.max(1, Math.floor(Math.min(m.mm_quote_size * mult, MM_HARD.MAX_QUOTE_SIZE)));
   const now = Date.now();
   const nowDate = new Date(now);
   const notes: string[] = [];
@@ -835,6 +841,75 @@ async function mmRun(runId: number) {
   return out;
 }
 
+// ------------------------------------------------------------------ allocator (paper only)
+
+/** Latest size multiplier for an agent from the daily allocator (1 if it hasn't run yet). */
+async function riskMult(agent: string): Promise<number> {
+  try {
+    const [r] = await sql`select risk_mult from edgebot.agent_ledger where agent = ${agent} order by date desc limit 1`;
+    const v = Number(r?.risk_mult);
+    return Number.isFinite(v) && v > 0 ? v : 1;
+  } catch {
+    return 1; // table not there yet
+  }
+}
+
+/** Each agent's paper equity and early-edge signal today. Agents without results yet are left out. */
+async function agentSnapshots(): Promise<{ agent: string; equity: number; lead: number | null }[]> {
+  const s = await loadSettings();
+  const out: { agent: string; equity: number; lead: number | null }[] = [];
+  const mm = await mmStats();
+  if (mm) {
+    const [l] = await sql`select avg(markout) as v from edgebot.mm_fills where markout is not null and filled_at > now() - interval '7 days'`;
+    out.push({ agent: "weather_mm", equity: mm.equity, lead: l?.v === null || l?.v === undefined ? null : Number(l.v) });
+  }
+  if (s.paper_start_bankroll > 0) {
+    const bank = await paperBankroll(s.paper_start_bankroll);
+    const [l] = await sql`select avg(clv) as v from edgebot.bets where mode = 'paper' and clv is not null and placed_at > now() - interval '30 days'`;
+    out.push({ agent: "football", equity: bank.equity, lead: l?.v === null || l?.v === undefined ? null : Number(l.v) });
+  }
+  return out;
+}
+
+/** Daily: score every agent, update Hedge weights, apply the confidence gate and drawdown ladder, save. */
+async function allocateRun() {
+  const today = new Date().toISOString().slice(0, 10);
+  const snaps = await agentSnapshots();
+  const days: AgentDay[] = [];
+  for (const a of snaps) {
+    // Newest 1,000 days, then back into date order (oldest first).
+    const hist = (await sql`select date, equity, peak_equity, score, logw, status from edgebot.agent_ledger
+                            where agent = ${a.agent} and date < ${today} order by date desc limit 1000`).reverse();
+    const last = hist.at(-1);
+    days.push({
+      agent: a.agent, equity: a.equity, prevEquity: last ? Number(last.equity) : null,
+      peak: last ? Number(last.peak_equity) : a.equity, prevLogw: last ? Number(last.logw) : 0,
+      history: hist.map((h) => Number(h.score)), lead: a.lead, prevStatus: (last?.status ?? "probation") as AgentStatus,
+    });
+  }
+  const results = allocate(days);
+  for (const [i, r] of results.entries()) {
+    await sql`insert into edgebot.agent_ledger ${sql({
+      agent: r.agent, date: today, equity: days[i].equity, peak_equity: Math.max(days[i].peak, days[i].equity), score: r.score,
+      lead: days[i].lead, logw: r.logw, psr: r.psr, min_days: r.minDays, weight: r.weight, risk_mult: r.riskMult,
+      status: r.status, drawdown: r.drawdown, reason: r.reason,
+    })} on conflict (agent, date) do update set equity = excluded.equity, peak_equity = excluded.peak_equity, score = excluded.score,
+      lead = excluded.lead, logw = excluded.logw, psr = excluded.psr, min_days = excluded.min_days, weight = excluded.weight,
+      risk_mult = excluded.risk_mult, status = excluded.status, drawdown = excluded.drawdown, reason = excluded.reason`;
+  }
+  return { date: today, agents: results.map((r) => ({ agent: r.agent, status: r.status, weight: Math.round(r.weight * 1000) / 1000, risk_mult: Math.round(r.riskMult * 100) / 100, reason: r.reason })) };
+}
+
+/** Latest allocator row per agent, for the dashboard. */
+async function allocatorStats() {
+  try {
+    return await sql`select distinct on (agent) agent, date, equity, weight, risk_mult, status, psr, min_days, drawdown, lead, reason
+                     from edgebot.agent_ledger order by agent, date desc`;
+  } catch {
+    return null;
+  }
+}
+
 /** Market-making numbers for the dashboard and weekly report. Null until the market-making tables exist. */
 async function mmStats() {
   try {
@@ -966,6 +1041,7 @@ async function dashboard() {
     unmatched_last_day: unmatched[0]?.c ?? 0,
     runs,
     market_making: await mmStats(),
+    allocator: await allocatorStats(),
   };
 }
 
@@ -1067,7 +1143,7 @@ Deno.serve(async (req) => {
   try {
     if (task === "dashboard") return json(await dashboard());
 
-    if (task === "scan" || task === "tick" || task === "report" || task === "mm") {
+    if (task === "scan" || task === "tick" || task === "report" || task === "mm" || task === "allocate") {
       const expected = await vault("edgebot_cron_secret");
       if (!expected || req.headers.get("x-edgebot-cron") !== expected) {
         // The control token may also trigger these by hand (e.g. "run a scan now" from the dashboard).
@@ -1076,7 +1152,7 @@ Deno.serve(async (req) => {
       }
       const id = await startRun(task);
       try {
-        const result = task === "scan" ? await scan(id) : task === "tick" ? await tick() : task === "mm" ? await mmRun(id) : await report();
+        const result = task === "scan" ? await scan(id) : task === "tick" ? await tick() : task === "mm" ? await mmRun(id) : task === "allocate" ? await allocateRun() : await report();
         await finishRun(id, true, result);
         return json({ ok: true, run: id, result });
       } catch (e) {
