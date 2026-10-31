@@ -1,4 +1,5 @@
 import {mountWorkflow} from './workflow.mjs';
+import {mountEye} from './eye.mjs';
 import {mountImmersive} from './immersive.mjs';
 import {mountParallax} from './parallax.mjs';
 import {mountCalculations} from './calculations.mjs';
@@ -13,7 +14,7 @@ function blade(title,data){$('blade-title').textContent=title;$('blade-content')
 function el(tag,text,cls){const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;}
 function download(name,obj){const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));const a=el('a','Download');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 const cosmos=mountCosmos($('cosmos'),(role,events)=>blade(role+' / context',{role,status:events.length?'Recorded evidence':'Waiting for evidence',events}));
-function render(){cosmos.update(state.events);try{localStorage.setItem('edge-paper-v1',JSON.stringify(state));}catch{}const m=metrics(state);for(const id of ['overview-metrics','money-metrics']){$(id).replaceChildren();for(const [label,value] of [['Paper equity',m.equity],['Realized paper P&L',m.realized],['Unrealized paper P&L',m.unrealized],['Available paper cash',state.cash]]){const box=el('div','','metric');box.append(el('span',label),el('strong',money(value)));$(id).append(box);}}
+function render(){cosmos.update(state.events);window.dispatchEvent(new CustomEvent('edge-desk-events',{detail:state.events}));try{localStorage.setItem('edge-paper-v1',JSON.stringify(state));}catch{}const m=metrics(state);for(const id of ['overview-metrics','money-metrics']){$(id).replaceChildren();for(const [label,value] of [['Paper equity',m.equity],['Realized paper P&L',m.realized],['Unrealized paper P&L',m.unrealized],['Available paper cash',state.cash]]){const box=el('div','','metric');box.append(el('span',label),el('strong',money(value)));$(id).append(box);}}
  $('roles').replaceChildren();for(const role of roles){const b=el('button',role,'role');const events=state.events.filter(e=>e.agent===role);b.append(el('small',events.length+' recorded events'));b.onclick=()=>blade(role,{role,mode:'paper',events});$('roles').append(b);}
  for(const [id,items] of [['positions',state.positions],['closed',state.closed]]){$(id).replaceChildren();if(!items.length)$(id).append(el('p','No '+(id==='closed'?'closed':'open')+' paper positions.'));for(const p of items){const b=el('button',p.mint+' · '+(id==='closed'?money(p.pnl):money(p.quantity*p.mark)),'position');b.onclick=()=>blade('Position evidence',p);$(id).append(b);}}
  $('events').replaceChildren();const query=$('search').value.toLowerCase();for(const e of [...state.events].reverse().filter(e=>JSON.stringify(e).toLowerCase().includes(query))){const b=el('button',e.agent+' / '+e.mint+' — '+e.reason,'event');b.append(el('small',' · '+new Date(e.at).toLocaleTimeString()));b.onclick=()=>blade('Decision evidence',e);$('events').append(b);}if(!state.events.length)$('events').append(el('p','No decisions yet. Import timestamped candidate evidence in Agent desk.'));}
@@ -46,4 +47,7 @@ document.querySelector('.brand').onclick=e=>{e.preventDefault();page('observator
 observatory.setVideo('https://d8j0ntlcm91z4.cloudfront.net/user_36nirQ0Q9RM6LsQk7YYAZf75ceZ/hf_20261030_013817_1f3f5ad4-93fb-4ece-9e50-f9fe7247444c.mp4');
 
 mountWorkflow(()=>metrics(state));
+
+// The Eye is home: every record, agent and decision in one living nebula.
+const eye=mountEye({navigate:id=>window.parallaxNavigate?.(id)});eye.show();
 
