@@ -5,6 +5,7 @@
 // There is deliberately no real-money path for market making. Fills are simulated from Kalshi's real trades.
 
 import { validPrice } from "./pricing.ts";
+import { num } from "./rules.ts";
 
 /** Hard limits for market making. Database settings can make these stricter, never looser. */
 export const MM_HARD = {
@@ -59,11 +60,6 @@ export interface MmSettings {
   mm_alert_fill_contracts: number;
 }
 
-function num(x: unknown, fallback: number): number {
-  if (x === null || x === undefined || x === "") return fallback;
-  const v = Number(x);
-  return Number.isFinite(v) ? v : fallback;
-}
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(Math.max(x, lo), hi);
 

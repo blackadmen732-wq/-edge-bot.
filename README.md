@@ -1,5 +1,9 @@
 # Edge Bot — football price checker
 
+## Research workspace
+
+The companion `edge-research` service adds a durable data archive, outcome/failure analysis, versioned calibration experiments, an authenticated MCP connection for Grok Bot, bounded optional AI investigations, and a standalone research dashboard. See [the research setup and connection guide](docs/research-system.md). Research model versions do not change execution settings.
+
 A bot that compares Kalshi's football prices with what the sharpest sportsbooks say each team's real chance is, and bets small only when Kalshi's price is wrong by more than the fees. It starts with fake money (paper trading). Real money stays locked until it has earned it.
 
 **Plain truth:** most people who bet on sports lose. This bot is built to find out *whether* it has an edge, cheaply and honestly, not to promise one. Treat any real money you put in as money you can afford to lose.
@@ -47,6 +51,24 @@ These are in the code (`supabase/functions/edgebot/lib/rules.ts`). Settings in t
 - **Schedule:** scans at :07 past every 6th hour (UTC), check-ins at :03 and :33 every hour, weekly report Mondays 13:05 UTC (9:05 AM Eastern).
 - **Dashboard:** a Claude dashboard called "Edge Bot" with live numbers from the database.
 - **Leagues:** college football, NFL, and the English Championship (second-tier English soccer). Less-watched games are where prices are most often off.
+
+## How code gets to Supabase (one way only)
+
+GitHub `main` is the only source of truth. Every push to `main` runs all the tests, then deploys both Supabase functions (`edgebot` and `edge-research`) automatically through `.github/workflows/ci-deploy.yml`. Pull requests run the tests but never deploy.
+
+Rules that stop the two drifting apart again:
+
+1. Never deploy from a feature branch, a chat, or the Supabase dashboard. Merge to `main` and let the workflow deploy.
+2. Database changes go in `supabase/migrations/` and are applied once by hand (SQL Editor or Claude). The workflow does not touch the database.
+3. If a deploy fails, the old version keeps running. Fix forward on `main`.
+
+**One-time setup:**
+
+1. Create a Supabase access token at https://supabase.com/dashboard/account/tokens.
+2. In GitHub: this repo → Settings → Secrets and variables → Actions → New repository secret. Name `SUPABASE_ACCESS_TOKEN`, value the token.
+3. If runs show "startup failure", GitHub Actions is off or blocked for this account: check repo Settings → Actions → General ("Allow all actions"), and account Settings → Billing for a spending block on private repos.
+
+Until the token is added, the workflow still runs the tests and skips the deploy with a warning.
 
 ## What you need to do (about 10 minutes)
 
@@ -185,3 +207,4 @@ update edgebot.settings set leagues = array['ncaaf','nfl','eflchamp','mls'] wher
 Each extra league costs about 120 odds credits a month on the free plan.
 
 Not financial or legal advice.
+

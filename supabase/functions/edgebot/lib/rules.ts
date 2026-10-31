@@ -84,7 +84,7 @@ export interface Settings {
  * Without this, a blank or garbage setting becomes NaN, and every comparison with NaN is false,
  * which would silently switch off the stop level, the daily limit and the long-shot filter.
  */
-function num(x: unknown, fallback: number): number {
+export function num(x: unknown, fallback: number): number {
   if (x === null || x === undefined || x === "") return fallback;
   const v = Number(x);
   return Number.isFinite(v) ? v : fallback;
