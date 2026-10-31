@@ -1,0 +1,499 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PARALLAX · Private Intelligence</title><style>@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+:root{color-scheme:dark;font:15px/1.6 'DM Sans',sans-serif;color:#eaf2f0;background:#090d10}*{box-sizing:border-box}body{margin:0}aside{position:fixed;width:230px;inset:0 auto 0 0;padding:32px 22px;border-right:1px solid #25302e;background:#0c1214}.brand{font:700 30px 'Space Grotesk',sans-serif;color:#b5f9d5;text-decoration:none;display:block}aside small{font-size:10px;color:#82958e;letter-spacing:1.5px}nav{margin-top:60px;display:grid;gap:9px}button{font:inherit;color:inherit;cursor:pointer;border:1px solid #30413c;background:#192922;border-radius:8px;padding:11px 17px}nav button{background:none;border:0;text-align:left;color:#93a79e}nav button.active,nav button:hover{background:#1b2c25;color:#b5f9d5}.aside-bottom{position:absolute;bottom:35px;font-size:11px;color:#a7c2b5}main{margin-left:230px;padding:0 48px;max-width:1800px}header,footer{display:flex;justify-content:space-between;gap:20px;padding:24px 0;color:#81958e;font-size:12px;border-bottom:1px solid #25302e}.pill{border:1px solid #355345;border-radius:30px;padding:3px 12px;color:#b5f9d5;font-size:10px;letter-spacing:1px}.page{padding:44px 0;min-height:82vh}.eyebrow{font-size:11px;letter-spacing:2.5px;color:#a4dfc0}h1{font:500 clamp(30px,4vw,55px)/1.15 'Space Grotesk',sans-serif;letter-spacing:-2px;margin:16px 0}h2{font:500 20px 'Space Grotesk',sans-serif}p{color:#91a69d;max-width:850px}.intro{font-size:17px}.universe{position:relative;height:390px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse,#213d302e,transparent 65%)}.hole{width:245px;height:245px;border-radius:50%;background:radial-gradient(circle,#020403 50%,#0b1e13 64%,#b9f7bf 68%,#33563c 70%,#000 73%);box-shadow:0 0 65px #6dce7e30,0 0 130px #5e9d5820;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2}.hole span{font-size:10px;letter-spacing:1px;color:#abcbb7}.hole strong{font:500 32px 'Space Grotesk';padding:12px}.orbit{position:absolute;width:640px;height:255px;border:1px solid #42614b55;border-radius:50%;transform:rotate(-20deg)}.two{width:740px;height:320px;animation:orbit 40s linear infinite}.satellite{position:absolute;font-size:10px;background:#0e1914;border:1px solid #344c3c;border-radius:20px;padding:8px 14px;color:#a8cbb6;z-index:3}.s1{left:10%;top:20%}.s2{right:4%;top:35%}.s3{left:20%;bottom:13%}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.metric,article,.role{border:1px solid #283830;border-radius:12px;padding:22px;background:#101916}.metric span{font-size:12px;color:#97ada1}.metric strong{display:block;font:500 27px 'Space Grotesk';margin-top:12px}.notice{padding:20px 0;font-size:12px;color:#91a69d}article{margin:22px 0}.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.role{text-align:left}.role small{color:#a8c7b6;display:block}.fields{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}label{font-size:12px;color:#a4b9af}input{display:block;width:100%;padding:12px;margin:8px 0;background:#0a100d;border:1px solid #354b3e;border-radius:7px;color:#e5f4eb;font:inherit}.secondary{background:transparent}.toolbar{display:flex;gap:20px;align-items:center}.event{display:block;width:100%;text-align:left;background:#101916;margin:8px 0;padding:16px}.event small{color:#819b8c}iframe{width:100%;height:1100px;border:1px solid #30413c;border-radius:12px}code,pre{overflow-wrap:anywhere;white-space:pre-wrap;font-size:12px}dialog{position:fixed;inset:0 0 0 auto;margin:0;width:min(520px,100%);height:100dvh;max-height:100dvh;border:0;border-left:1px solid #42614b;background:#111b16;padding:35px;color:#dceddf}dialog::backdrop{background:#0009}#close-blade{float:right}a{color:#b5f9d5}.position{padding:12px 0;border-bottom:1px solid #293c30}footer{margin-bottom:20px}@keyframes orbit{to{transform:rotate(340deg)}}@media(prefers-reduced-motion:reduce){.two{animation:none}}@media(max-width:900px){aside{width:180px;padding:20px 12px}main{margin-left:180px;padding:0 22px}.metrics,.roles,.fields{grid-template-columns:repeat(2,1fr)}.satellite{display:none}}@media(max-width:600px){aside{position:relative;width:auto}nav{margin-top:20px;display:flex;overflow:auto}nav button{white-space:nowrap}.aside-bottom{display:none}main{margin:0;padding:0 18px}.page{padding-top:28px}.metrics,.roles,.fields{grid-template-columns:1fr 1fr}.universe{height:300px}header{flex-wrap:wrap}.toolbar{flex-wrap:wrap}}
+
+/* Reference direction: black-hole lensing, Laniakea filaments, nebula depth. */
+:root{background:#030610;color:#e9e8e3}aside{background:#060913;border-color:#252b39}.brand,a,.eyebrow{color:#e9c98f}nav button.active,nav button:hover{background:#23202a;color:#ffe2a6}button{background:#23212b;border-color:#51483b}.pill{color:#e8c88e;border-color:#655239}.metric,article,.role,.event{background:#0a0f1a;border-color:#2a3040}.universe{height:460px;background:radial-gradient(ellipse at 55% 52%,#9e612322,transparent 55%),radial-gradient(ellipse at 65% 65%,#18295355,transparent 65%),#030610}.hole{width:270px;height:270px;background:radial-gradient(circle,#010104 56%,#0d0e17 61%,#fff2cf 65%,#c09b62 67%,#4f372e 69%,#010208 73%);box-shadow:0 0 70px #f3b76730,0 0 160px #486acb22}.hole span{color:#eedec2}.orbit{border-color:#f3d3a765;width:700px;height:100px;transform:rotate(-26deg);box-shadow:0 -3px 8px #edc78f35,0 4px 12px #fff0ca25}.two{width:590px;height:350px;animation:none;border-color:#7084b523;box-shadow:none;transform:rotate(-26deg)}.satellite{background:#090e1b;border-color:#3c4354;color:#d9d5c9}#cosmos{position:relative;height:650px;border:1px solid #252e40;border-radius:14px;overflow:hidden;background:#030610}#cosmos canvas{display:block;touch-action:none;cursor:grab}.map-controls{position:absolute;top:16px;left:16px;display:flex;gap:8px;flex-wrap:wrap}.map-controls button{font-size:11px;padding:8px 12px;background:#0c1320d9}.map-role-list{position:absolute;bottom:15px;left:15px;right:15px;display:flex;gap:8px;flex-wrap:wrap}.map-role-list button{font-size:11px;padding:7px 12px}dialog{background:#0b1020;border-color:#51526b}input{background:#070b14;border-color:#353d50}footer,header{border-color:#252b39}@media(max-width:600px){#cosmos{height:540px}.map-controls{right:10px}.universe{height:350px}}
+
+/* Simpler navigation, restrained typography, dedicated agent conversations. */
+h1{font-size:clamp(27px,3vw,40px);letter-spacing:-1px}.intro{font-size:15px}.chat-head{display:flex;justify-content:space-between;align-items:center;gap:20px}.chat-head span{color:#8994ac;font-size:12px}.chat-tabs{display:flex;gap:8px;flex-wrap:wrap}.chat-tabs button.active{border-color:#e8c88e;color:#ffe4b3}.chat-messages{height:430px;overflow:auto;margin:20px 0;border-top:1px solid #252e40;border-bottom:1px solid #252e40}.chat-messages article{background:transparent;border:0;border-left:2px solid #c9a971;border-radius:0;margin:18px 0}.chat-messages small{color:#e5c48b}.chat-compose{display:flex;gap:15px;align-items:end}.chat-compose label{flex:1}.chat-compose button{margin-bottom:8px}#agent-chat details{margin:25px 0;color:#97a2b8}#agent-chat[data-working="true"] .chat-head:after{content:'Request running';color:#f5d494;animation:work-pulse .8s ease-in-out infinite alternate}@keyframes work-pulse{to{opacity:.3}}@media(prefers-reduced-motion:reduce){#agent-chat[data-working="true"] .chat-head:after{animation:none}}
+
+.page{position:relative;isolation:isolate}.section-flow{position:absolute;pointer-events:none;z-index:-1;right:8%;top:130px;width:10px;height:10px;opacity:.35}.section-flow i{position:absolute;width:2px;height:2px;background:#f9dfac;border-radius:50%;box-shadow:0 0 5px #d4b681;animation:section-inflow 6s linear infinite;animation-delay:var(--delay)}#money .section-flow{right:45%;top:180px}#evidence .section-flow{right:15%;top:250px}#connections .section-flow{right:50%;top:160px}#conversations .section-flow{right:10%;top:160px}@keyframes section-inflow{0%{transform:rotate(var(--angle)) translateX(var(--radius));opacity:0}20%{opacity:1}100%{transform:rotate(calc(var(--angle) + 110deg)) translateX(0);opacity:0}}@media(prefers-reduced-motion:reduce){.section-flow i{animation:none;transform:rotate(var(--angle)) translateX(var(--radius))}}
+
+.galaxy-scene{height:550px;position:relative;overflow:hidden;background:#030610;border-radius:12px}.galaxy-scene canvas{display:block;cursor:pointer}.money-scene{height:360px}.scene-controls{position:absolute;right:20px;bottom:20px;display:flex;gap:8px}.scene-controls button{background:#0b1120a0;padding:6px 13px}.scene-caption{display:flex;justify-content:space-between;gap:20px;align-items:center;font-size:11px;color:#8997ac;margin:10px 0 24px}.scene-caption button{font-size:12px}#overview h1{font-size:32px}#overview .intro{margin-bottom:0}#overview.page{padding-top:25px}@media(max-width:600px){.galaxy-scene{height:420px}.money-scene{height:300px}}
+
+.brand{font-size:24px}.px-heading{display:flex;justify-content:space-between;gap:20px;align-items:start}.px-heading .pill{margin-top:20px;white-space:nowrap}.px-tools{display:flex;gap:10px;align-items:center;margin:20px 0;flex-wrap:wrap}.px-tools input{flex:1;min-width:200px}.px-tools select{padding:12px;background:#0c1422;color:#dce7f5;border:1px solid #354255;border-radius:8px}.px-tools button{font-size:12px}.px-layout{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:24px}.px-inspector{position:static;width:auto;background:#0b101c;border:1px solid #293347;border-radius:12px;padding:22px;max-height:850px;overflow:auto}.px-inspector small{display:block;color:#8296ae}.px-inspector p{margin:4px 0 18px}.px-inspector h2{overflow-wrap:anywhere}.px-graph{height:460px;position:relative;border:1px solid #26334a;border-radius:15px;background:radial-gradient(ellipse at 50% 45%,#b48b3420,transparent 65%),#050b18;overflow:hidden}.px-graph svg{width:100%;height:100%}.px-graph text{font:11px system-ui;fill:#c1d0e3}.px-node{fill:#92b9e6;filter:drop-shadow(0 0 5px #98bfff)}.px-node.pattern{fill:#ffe0a0;filter:drop-shadow(0 0 7px #ffe0a0)}.px-filament{fill:none;stroke:#d3af6260;stroke-width:1}.px-graph g{cursor:pointer}.px-graph g:focus circle{stroke:white;stroke-width:3}.px-empty{display:grid;place-items:center;height:100%;padding:40px;text-align:center;color:#94a7c3}.px-summary{font-size:12px;color:#8399b4;padding:18px 0}.px-record{display:grid;grid-template-columns:90px 1fr;gap:7px;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid #283143;border-radius:0;padding:17px 4px}.px-record>span:last-child{grid-column:2;color:#8799b0;font-size:12px}.px-related{display:block;margin:8px 0;font-size:12px}.px-connect{margin-top:30px;padding:20px;border-top:1px solid #283143}.px-connect input{max-width:700px}.px-connect button{margin:10px 8px 0 0}@media(max-width:1100px){.px-layout{grid-template-columns:1fr}.px-inspector{max-height:500px}.px-heading{display:block}}
+/* Immersive observatory: artwork leads, controls remain secondary. */
+body:has(#observatory:not([hidden])){overflow:hidden}body:has(#observatory:not([hidden]))>aside,body:has(#observatory:not([hidden])) main>header,body:has(#observatory:not([hidden])) footer{display:none}body:has(#observatory:not([hidden])) main{margin:0;padding:0;max-width:none}.observatory{position:relative!important;height:100svh;min-height:620px;overflow:hidden;background:#03070d;color:#e7e9ed;padding:0!important}.observatory-sky,.observatory canvas,.observatory-shade{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.observatory-sky{transform:translate(var(--mx,0),var(--my,0)) scale(1.04);transition:transform 1.8s ease;animation:cosmic-arrival 3s ease-out both}.observatory-sky img,.observatory-sky video{position:absolute;width:100%;height:100%;object-fit:cover;object-position:65% 48%}.observatory-sky img{filter:brightness(.68);animation:cosmic-drift 80s ease-in-out infinite alternate}.observatory-sky video{opacity:0;transition:opacity 2s}.video-ready .observatory-sky video{opacity:1}.observatory-shade{background:linear-gradient(90deg,rgba(2,5,10,.95),rgba(2,5,10,.7) 32%,transparent 72%),linear-gradient(0deg,#03070d 1%,transparent 45%)}.observatory-top,.observatory-copy,.observatory-destinations,.observatory-bottom{position:absolute;z-index:2}.observatory-top{left:5vw;right:5vw;top:34px;display:flex;justify-content:space-between;align-items:center;letter-spacing:.24em;font-size:19px}.observatory-top small{display:block;font-size:8px;letter-spacing:.3em;color:#a3abb7;margin-top:7px}.observatory button{background:transparent;border:0;color:inherit}.observatory-top button{font-size:11px;border:1px solid #ffffff30;border-radius:30px;padding:10px 18px;letter-spacing:.05em}.observatory-copy{top:23%;left:8vw;max-width:550px}.observatory-copy h1{font-size:clamp(38px,4.5vw,76px);font-weight:400;line-height:1.03;letter-spacing:-.05em;margin:25px 0}.observatory-copy h1 em{font-family:Georgia,serif;font-weight:400;color:#e4c99d}.observatory-copy p:not(.eyebrow){font-size:14px;color:#abb2bf;line-height:1.8;max-width:280px}.observatory-copy .enter-universe{margin-top:26px;border-bottom:1px solid #e4c99d80;border-radius:0;padding:14px 0;min-width:240px;text-align:left;color:#e4c99d}.enter-universe span{float:right}.observatory-destinations{bottom:75px;left:8vw;right:8vw;display:grid;grid-template-columns:repeat(3,1fr);gap:35px}.observatory-destinations button{border-top:1px solid #ffffff30;border-radius:0;text-align:left;padding:20px 0;transition:border-color .3s,transform .3s}.observatory-destinations button:hover{border-color:#e4c99d;transform:translateY(-5px)}.observatory-destinations small{font-size:9px;letter-spacing:.2em;color:#b9a78e}.observatory-destinations strong{display:block;font-weight:400;font-size:20px;margin:13px 0 8px}.observatory-destinations span{font-size:11px;color:#8c98a8}.observatory-bottom{bottom:24px;left:5vw;right:5vw;display:flex;justify-content:space-between;font-size:8px;letter-spacing:.16em;color:#788293}.motion-paused *{animation-play-state:paused!important}@keyframes cosmic-drift{from{transform:scale(1.03) rotate(-1deg)}to{transform:scale(1.17) rotate(2deg)}}@keyframes cosmic-arrival{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}@media(max-width:700px){.observatory{min-height:680px}.observatory-copy{top:20%;left:7vw}.observatory-copy h1{font-size:43px}.observatory-destinations{gap:15px;left:7vw;right:7vw;bottom:60px}.observatory-destinations strong{font-size:14px}.observatory-destinations span{display:none}.observatory-bottom span:last-child{display:none}.observatory-shade{background:linear-gradient(90deg,#03070dcc,transparent),linear-gradient(0deg,#03070d,transparent 75%)}}@media(prefers-reduced-motion:reduce){.observatory *{animation:none!important;transition:none!important}}
+
+.scene-switch{display:flex;gap:10px}.core-view .observatory-sky video{display:none}.core-view .observatory-sky img{object-position:70% 50%;filter:brightness(.8)}@media(max-width:700px){.scene-switch{flex-direction:column}.observatory-top{align-items:flex-start}.observatory-top button{padding:8px;font-size:9px}}
+body.workflow-mode{overflow:hidden}body.workflow-mode>aside,body.workflow-mode main>header,body.workflow-mode main>footer{display:none}body.workflow-mode main{padding:0;margin:0;max-width:none}.workflow{position:fixed!important;inset:0;overflow:hidden;background:#03070c;padding:0!important;color:#f1ece2}.wf-art,.workflow>canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.wf-art{transform:translate(var(--x,0),var(--y,0)) scale(1.04);transition:transform 1.8s;animation:wf-drift 55s ease-in-out infinite alternate}.wf-art img{width:100%;height:100%;object-fit:cover;object-position:80% 45%;opacity:.83}.workflow:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#03070cd9,transparent 55%),linear-gradient(0deg,#03070c,transparent 40%);z-index:0}.workflow>canvas{z-index:1}.wf-header,.wf-nav,.wf-label,.wf-footer,.wf-agents{position:absolute;z-index:2}.wf-header{top:0;left:0;right:0;display:flex;justify-content:space-between;padding:28px 35px;border:0!important;background:transparent!important;letter-spacing:.22em}.wf-header small{display:block;font-size:8px;color:#a9a9aa;margin-top:8px}.wf-controls{display:flex;gap:9px}.wf-controls button,.wf-controls select{font-size:10px;background:#080c1455;border:1px solid #ffffff30;color:#eee;border-radius:24px;padding:9px 13px}.wf-nav{left:30px;top:145px;width:150px;display:grid;gap:8px}.wf-nav button{background:transparent;border:0;text-align:left;font-size:12px;color:#bcc3ca;padding:13px 12px}.wf-nav button:hover,.wf-nav button.active{color:#fff0d0;background:#ffffff0e}.wf-label{left:230px;top:140px;pointer-events:none}.wf-label>span{font-size:9px;letter-spacing:.24em;color:#d2be99}.wf-label h1{font-size:clamp(25px,3vw,48px);font-family:Georgia,serif;font-weight:400;line-height:1.15;margin:18px 0}.wf-label p{font-size:10px;color:#aeb7bf;max-width:220px}.wf-agents{inset:0;pointer-events:none}.wf-agent{pointer-events:auto;position:absolute;transform:translate(-50%,-50%);background:#050810a8;border:1px solid #fff2;border-radius:30px;display:grid;grid-template-columns:22px auto;column-gap:8px;padding:10px 15px;min-width:110px;backdrop-filter:blur(10px);color:#eee;text-align:left}.wf-agent i{grid-row:span 2;width:16px;height:22px;background:linear-gradient(#fff0cf,#6f7a86);border-radius:50% 50% 30% 30%;box-shadow:0 0 18px #ffe5ae55}.wf-agent span{font-size:11px}.wf-agent small{font-size:8px;color:#9faab7}.wf-agent.working{border-color:#f7d69c;box-shadow:0 0 25px #f7d69c60}.wf-footer{bottom:25px;left:35px;right:35px;display:flex;justify-content:space-between;gap:20px;background:transparent!important;border:0!important;font-size:12px}.wf-footer small{font-size:8px;letter-spacing:.1em;color:#97a1ad}.wf-drawer{position:absolute;right:20px;top:95px;bottom:75px;width:min(850px,calc(100% - 220px));z-index:5;border:1px solid #ffffff28;border-radius:18px;background:#080d16eb;backdrop-filter:blur(25px);box-shadow:0 25px 100px #0008;overflow:hidden}.wf-close{position:absolute;right:18px;top:12px;z-index:10;background:#101925;border:1px solid #ffffff25;color:#ddd;padding:8px 16px}.wf-content{height:100%;overflow:auto;padding:55px 24px 25px}.wf-content .page{padding:0;min-height:0}.wf-content h1{font-size:28px}.wf-content .px-workspace{grid-template-columns:1fr}.wf-content .section-flow{display:none}@keyframes wf-drift{from{scale:1}to{scale:1.045}}@media(max-width:800px){.wf-label{left:24px;top:170px}.wf-label h1{font-size:25px}.wf-header{padding:18px}.wf-controls{gap:3px}.wf-controls button,.wf-controls select{padding:7px;font-size:9px}.wf-nav{left:10px;right:10px;top:90px;display:flex;width:auto;overflow:auto;gap:0}.wf-nav button{white-space:nowrap;font-size:10px}.wf-drawer{left:10px;right:10px;top:150px;bottom:70px;width:auto}.wf-footer{left:15px;right:15px;flex-direction:column;gap:8px;font-size:10px}.wf-agent{min-width:80px;padding:7px;gap:3px}.wf-agent span{font-size:9px}.wf-agent i{width:11px;height:17px}.wf-content{padding:55px 12px 20px}}@media(prefers-reduced-motion:reduce){.wf-art{animation:none;transition:none}}
+
+
+/* Black Hole Calculations: real interactive math over existing cinematic assets */
+#calculations{max-width:1700px}
+.bh-heading{display:flex;justify-content:space-between;gap:25px;align-items:start;flex-wrap:wrap;margin-bottom:25px}
+.bh-heading h1{font:400 clamp(36px,4.2vw,64px)/1.12 Georgia,serif;letter-spacing:-.035em;margin:12px 0}
+.bh-heading h1 em{font-style:normal;color:#ecd5b2}
+.bh-heading p{max-width:680px;color:#b6bdc6}
+.bh-frame{display:grid;grid-template-columns:minmax(320px,1.05fr) minmax(360px,1fr);background:#070c15;border:1px solid #c7b39445;border-radius:18px;overflow:hidden;min-height:630px}
+.bh-visual{position:relative;min-height:600px;overflow:hidden;background:#070a10}
+.bh-visual>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:65% center;filter:brightness(.78)}
+.bh-vignette{position:absolute;inset:0;background:linear-gradient(180deg,#03050a9c,transparent 35%,#02050dcc 97%),radial-gradient(ellipse at center,transparent 36%,#02050bb5 100%)}
+.bh-orbits{position:absolute;inset:0;pointer-events:none;transform:translateZ(0)}
+.bh-orbits span{position:absolute;left:50%;top:49%;border-radius:50%;border:1px solid #ffe2ac70;width:76%;height:22%;transform:translate(-50%,-50%) rotate(-22deg);box-shadow:0 0 17px #b7834835;animation:bh-orbit 17s ease-in-out infinite alternate}
+.bh-orbits span:nth-child(2){width:95%;height:28%;border-color:#ffffff38;animation-duration:24s;animation-direction:alternate-reverse}
+.bh-orbits i{position:absolute;width:4px;height:4px;border-radius:50%;background:#fff5c4;box-shadow:0 0 18px 5px #fae3aa9c;opacity:0;left:10%;top:50%}
+.bh-processed .bh-orbits i{animation:bh-infall 1.3s cubic-bezier(.19,.7,.7,1) forwards}
+.bh-orbits i:nth-of-type(2){top:25%;left:76%;animation-delay:.18s}
+.bh-orbits i:nth-of-type(3){top:86%;left:26%;animation-delay:.33s}
+.bh-visual-top,.bh-visual-bottom{position:absolute;left:25px;right:25px;display:flex;justify-content:space-between;align-items:center;gap:16px;color:#f9efe2;font-size:11px;letter-spacing:.13em}
+.bh-visual-top{top:23px}.bh-visual-top strong{border:1px solid #edc78f88;color:#ffe4b6;border-radius:20px;padding:6px 10px;font-size:10px}
+.bh-visual-bottom{bottom:27px}.bh-visual-bottom span{color:#d5c4b0}
+.bh-interactive{padding:28px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.bh-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.bh-tabs button{font-size:11px;padding:9px 11px;background:transparent;color:#9ba8bc;border:1px solid #ffffff25;border-radius:19px}
+.bh-tabs button[aria-selected=true]{background:#e9ca99;color:#0e1118;border-color:#e9ca99}
+.bh-interactive label{display:block;font-size:12px;color:#b9c6d8;margin:8px 0}
+.bh-interactive input,.bh-interactive textarea{display:block;margin-top:7px;background:#0e1726;border:1px solid #3f4c60;color:#f3efe6;padding:10px 12px;width:100%;border-radius:8px;resize:vertical}
+.bh-interactive p{font-size:12px;color:#aeb7c6}
+.bh-interactive code{color:#f3d7ac}
+.bh-interactive #bh-run{background:#e9c99b;color:#101218;border:0;margin-top:9px;font-weight:700;border-radius:20px}
+.bh-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+#bh-error{color:#e5ab89;min-height:15px;margin:0}
+.bh-result{margin-top:auto;background:#0b1220;border:1px solid #c7b39425;border-radius:14px;padding:18px}
+.bh-result small{color:#c5a77a;font-size:10px;letter-spacing:.16em}
+.bh-result h2{font:400 clamp(21px,2.2vw,32px)/1.2 Georgia,serif;color:#f3e7d5;margin:12px 0}
+.bh-result p{max-width:none;overflow-wrap:anywhere}
+#bh-chart{display:block;width:100%;height:125px;overflow:visible}
+.bh-info{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin-top:19px}
+.bh-info section{padding:25px;background:#0c141c;border:1px solid #27362f;border-radius:16px}
+.bh-info h2{font:400 24px Georgia,serif;margin:8px 0 18px;color:#f0e6d8}
+.bh-info p{color:#a9b7c4;font-size:13px}
+.bh-info strong{color:#eed3a6}
+.bh-info ol{margin:0 0 20px;padding-left:22px;display:grid;gap:12px;font-size:13px;color:#e1e3e6;overflow-wrap:anywhere}
+.bh-info li::marker{color:#dcb987}
+.bh-info button{color:#f4dfb5;border-color:#dcb98766}
+@keyframes bh-orbit{from{transform:translate(-50%,-50%) rotate(-22deg) scale(.96)}to{transform:translate(-50%,-50%) rotate(-12deg) scale(1.04)}}
+@keyframes bh-infall{0%{opacity:0;transform:translate(0,0)}15%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translate(115px,-36px)}}
+@media(max-width:900px){.bh-frame{grid-template-columns:1fr}.bh-visual{min-height:360px}.bh-info{grid-template-columns:1fr}}
+@media(max-width:540px){.bh-interactive{padding:16px}.bh-info section{padding:17px}.bh-fields{grid-template-columns:1fr}.bh-visual{min-height:290px}}
+@media(prefers-reduced-motion:reduce){.bh-orbits span,.bh-orbits i{animation:none!important}}
+
+</style><body>
+<aside><a class="brand" href="#overview">◉ PARALLAX</a><small>PRIVATE INTELLIGENCE</small><nav><button data-page="parallax">✧ Data universe</button><button data-page="calculations">◉ Black Hole · Calculations</button><button data-page="overview">◌ Overview</button><button data-page="conversations">◍ Agent chats</button><button data-page="context">✧ Context universe</button><button data-page="agents">⌘ Agent desk</button><button data-page="money">↗ Performance</button><button data-page="evidence">≡ Evidence & decisions</button><button data-page="connections">⛓ Connections</button><button data-page="research">◎ Research workspace</button></nav><div class="aside-bottom">PAPER WORKSPACE<br><small>Archived research · local paper session</small></div></aside>
+<main><header><span id="breadcrumb">Workspace / Overview</span><span class="pill">● PRIVATE · RESEARCH + LOCAL PAPER</span></header><section id="parallax" class="page" hidden></section><section id="calculations" class="page" hidden></section><section id="overview" class="page"><div class="eyebrow">EDGE / OVERVIEW</div><h1>Your workspace.</h1><p class="intro">Follow the evidence. See every decision. Know where the money goes.</p><div class="galaxy-scene" id="galaxy-scene"></div><div class="scene-caption"><span>Galaxy motion is ambient. Agent labels show request activity.</span><button id="sound-toggle">Sound off</button></div><div id="overview-metrics" class="metrics"></div><div class="notice">Select an orbiting agent to open its conversation. Solana launch feeds remain unconnected. Paper positions use imported observations.</div></section>
+<section id="conversations" class="page" hidden><div class="eyebrow">SIX ROLES / SEPARATE THREADS</div><h1>Talk to your agents.</h1><div id="agent-chat"></div><p class="notice">Connected AI replies are saved on the research server. Local evidence messages persist in this browser. Roles share one provider and do not run independently in the background.</p></section><section id="context" class="page" hidden><div class="eyebrow">PATTERNS / EVIDENCE / CONTEXT</div><h1>Context.</h1><p>A spatial view of the six roles and their recorded evidence. Select a node to open its information blade.</p><div id="cosmos"></div><p class="notice">Gold filaments group evidence by role; they do not establish statistical relationships. Moving particles replay recorded handoffs, not live worker activity. No events means waiting.</p></section><section id="agents" class="page" hidden><div class="eyebrow">SIX ROLES · EXPLICIT HANDOFFS</div><h1>Agent desk</h1><p>Scout → Filter → Analyst → Risk → Executor. Logger records each decision.</p><div id="roles" class="roles"></div><article><h2>Paper risk configuration</h2><div class="fields"><label>Starting paper balance<input id="bankroll" type="number" value="1000" min="1"></label><label>Initial stop (%)<input id="stop" type="number" placeholder="Required" min="0.1" max="99"></label><label>Trailing distance (%)<input id="trail" type="number" placeholder="Required" min="0.1" max="99"></label><label>Costs per side (basis points)<input id="cost" type="number" value="100" min="0" max="1000"></label></div><p>Maximum allocation: 10% of marked paper equity. Trailing activates after +15%. Default cost assumption: 1% per side; this is not a verified venue fee.</p><button id="reset">Start new paper session</button></article><article><h2>Import candidate evidence</h2><p>JSON array with timestamped screening results. Unknown checks reject the candidate. Imported scores are not model predictions made by this desk.</p><input id="import" type="file" accept="application/json"><button id="sample" class="secondary">Download input template</button><p id="import-result" role="status"></p></article></section>
+<section id="money" class="page" hidden><div class="eyebrow">ACCOUNTING WITHOUT INVENTED RETURNS</div><h1>Money.</h1><div class="galaxy-scene money-scene" id="money-scene"></div><div id="money-metrics" class="metrics"></div><article><h2>Open paper positions</h2><div id="positions"></div><div class="fields"><label>Mint<input id="quote-mint"></label><label>New observed price<input id="quote-price" type="number" step="any"></label><label>Quote timestamp (ISO)<input id="quote-time" placeholder="2026-10-29T19:30:00Z"></label></div><button id="quote">Apply paper quote</button><p>Supply a fresh quote timestamp. Gaps execute at the observed price, including the configured cost assumption.</p></article><article><h2>Closed positions</h2><div id="closed"></div></article><div class="notice">Real-money profit: unavailable. No wallet, live orders, deposits, or withdrawals are connected.</div></section>
+<section id="evidence" class="page" hidden><div class="eyebrow">EVERY PASS. EVERY REJECTION.</div><h1>Decision journal</h1><div class="toolbar"><input id="search" placeholder="Filter by mint, role, or reason"><button id="export">Export paper session</button></div><div id="events"></div></section>
+<section id="connections" class="page" hidden><div class="eyebrow">CONNECT THE EVIDENCE</div><h1>Connections</h1><p>The existing research workspace supports secure provider-key storage. Helius and Jupiter data adapters are configured in the backend. Launch-specific decoders remain separate work.</p><div id="providers" class="roles"></div><article><h2>External agent / MCP</h2><p>Connect a compatible external agent to your existing research tools using this endpoint and the dedicated research token.</p><code>https://mhahkbssltukjhusjsjf.supabase.co/functions/v1/edge-research/mcp</code><p>Research access supports evidence and experiment tools. It does not expose this local paper simulator. “Grabbot” needs an exact product/API identity before an adapter can be implemented.</p><button data-page="research">Open secure research connection settings</button></article></section>
+<section id="research" class="page" hidden><h1>Research workspace</h1><p>Your existing authenticated tools, data feeds, provider keys, datasets, and experiment history.</p><iframe src="../research/index.html" title="Edge research workspace"></iframe></section>
+<footer><span id="status" role="status">Ready · paper simulation · background particles are ambient</span><span>PARALLAX</span></footer></main><dialog id="blade"><button id="close-blade" aria-label="Close detail panel">✕</button><div class="eyebrow">EVIDENCE BLADE</div><h2 id="blade-title"></h2><pre id="blade-content"></pre></dialog><script type="module">const roles=['Scout','Filter','Analyst','Risk','Executor','Logger'];
+function createDesk(bankroll=1000){if(!Number.isFinite(bankroll)||bankroll<=0)throw Error('Invalid paper bankroll');return {mode:'paper',initial:bankroll,cash:bankroll,positions:[],closed:[],events:[],seen:[]};}
+function processCandidate(s,c,cfg,now=Date.now()){
+ const log=(agent,reason)=>s.events.push({agent,reason,mint:c?.mint??'unknown',at:new Date(now).toISOString()});
+ const kill=(agent,reason)=>{log(agent,reason);log('Logger','Rejected: '+reason);return {accepted:false,reason};};
+ if(!c||typeof c.mint!=='string'||!c.mint.trim())return kill('Scout','Missing mint');
+ if(s.seen.includes(c.mint))return kill('Scout','Already evaluated');
+ s.seen.push(c.mint);log('Scout','Candidate received from imported evidence');
+ const fresh=Date.parse(c.observedAt);if(!Number.isFinite(fresh)||fresh>now||now-fresh>60000)return kill('Filter','Evidence is stale or timestamp invalid');
+ const checks=[['mintRevoked',true],['freezeRevoked',true],['liquidityVerified',true],['devRugLinked',false],['bundledLaunch',false]];
+ for(const [key,expected] of checks)if(c[key]!==expected)return kill('Filter',key+': failed or unknown');
+ if(!Number.isFinite(c.top10Percent)||c.top10Percent<0||c.top10Percent>25)return kill('Filter','Holder concentration failed or unknown');
+ if(!Number.isFinite(c.volume1hUsd)||c.volume1hUsd<40000)return kill('Filter','Hourly volume below $40,000 or unknown');
+ log('Filter','All declared checks passed; imported evidence is not independently verified');
+ if(!Number.isFinite(c.score)||c.score<.6||c.score>1)return kill('Analyst','Score below 0.6 or invalid');
+ if(typeof c.scoreVersion!=='string'||!c.scoreVersion)return kill('Analyst','Missing scoring model version');
+ log('Analyst','Imported score '+c.score+' / '+c.scoreVersion+' (not a win probability)');
+ if(!cfg||!Number.isFinite(cfg.stopPct)||cfg.stopPct<=0||cfg.stopPct>=100||!Number.isFinite(cfg.trailPct)||cfg.trailPct<=0||cfg.trailPct>=100)return kill('Risk','Set stop and trailing percentages first');
+ if(!Number.isFinite(c.price)||c.price<=0)return kill('Risk','Invalid entry price');
+ if(!Number.isFinite(cfg.costBps)||cfg.costBps<0||cfg.costBps>1000)return kill('Risk','Invalid cost assumption');
+ const equity=s.cash+s.positions.reduce((a,p)=>a+p.quantity*p.mark,0),allocation=Math.min(equity*.1,s.cash/(1+cfg.costBps/10000));
+ if(allocation<1)return kill('Risk','Insufficient available paper cash');
+ const fee=allocation*cfg.costBps/10000;log('Risk','10% equity cap, cash reserved, stop configured before entry');
+ const p={mint:c.mint,quantity:allocation/c.price,entry:c.price,mark:c.price,high:c.price,stop:c.price*(1-cfg.stopPct/100),trailPct:cfg.trailPct,costBps:cfg.costBps,basis:allocation+fee,openedAt:new Date(now).toISOString(),lastAt:now};
+ s.cash-=p.basis;s.positions.push(p);log('Executor','Paper fill at imported price; costs are assumptions');log('Logger','Position recorded');return {accepted:true,position:p};
+}
+function markPosition(s,mint,price,at,now=Date.now()){
+ if(!Number.isFinite(price)||price<=0)throw Error('Invalid price');const time=Date.parse(at);
+ const p=s.positions.find(p=>p.mint===mint);if(!p)throw Error('No open position');
+ if(!Number.isFinite(time)||time<=p.lastAt||time>now||now-time>60000)throw Error('Quote must be fresh and newer than the previous observation');
+ p.lastAt=time;p.mark=price;p.high=Math.max(p.high,price);if(p.high>=p.entry*1.15)p.stop=Math.max(p.stop,p.high*(1-p.trailPct/100));
+ if(price<=p.stop){const proceeds=p.quantity*price*(1-p.costBps/10000);s.cash+=proceeds;const closed={...p,exit:price,pnl:proceeds-p.basis,closedAt:at};s.closed.push(closed);s.positions=s.positions.filter(x=>x!==p);s.events.push({agent:'Risk',mint,at,reason:'Paper stop triggered at observed price, not guaranteed stop price'},{agent:'Logger',mint,at,reason:'Realized paper P&L '+closed.pnl.toFixed(2)});return closed;}return null;
+}
+function metrics(s){return {equity:s.cash+s.positions.reduce((a,p)=>a+p.mark*p.quantity,0),realized:s.closed.reduce((a,p)=>a+p.pnl,0),unrealized:s.positions.reduce((a,p)=>a+p.mark*p.quantity-p.basis,0)};}
+
+
+// Transparent math demonstrations for the private Black Hole calculation panel.
+// All functions are deterministic, local, research/education only. No orders.
+// They do not train a deep network or claim predictive trading performance.
+const num=(n,name,min=-1e6,max=1e6)=>{
+ if(typeof n!=='number'||!Number.isFinite(n)||n<min||n>max)throw new Error(name+' must be a finite number in range.');
+ return n;
+};
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+const sd=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/a.length);};
+function patternMath(values){
+ if(!Array.isArray(values)||values.length<6||values.length>2000)throw new Error('Enter 6 to 2000 observations.');
+ values.forEach((v,i)=>num(v,'Observation '+(i+1),0.000000001,1e9));
+ const last=values.at(-1),previous=values.at(-2),prior=values.slice(-21,-1);
+ const mu=mean(prior),sigma=sd(prior),high=Math.max(...prior),low=Math.min(...prior);
+ const z=sigma===0?null:(last-mu)/sigma;
+ const lastReturnPct=100*(last/previous-1);
+ const returns=values.slice(1).map((v,i)=>100*(v/values[i]-1));
+ return {
+  label:last>high?'Range breakout UP':last<low?'Range breakout DOWN':'Within prior range',
+  count:values.length,window:prior.length,latest:last,previous,mean:mu,std:sigma,z,
+  previousHigh:high,previousLow:low,lastReturnPct,volatilityPct:sd(returns),
+  steps:[
+   'Use the previous '+prior.length+' numbers as the comparison window; exclude the latest point.',
+   'Mean μ = sum(previous values) / '+prior.length+' = '+mu.toFixed(5),
+   'Population deviation σ = √[sum((x − μ)²) / '+prior.length+'] = '+sigma.toFixed(5),
+   'Z = (latest − μ) / σ = '+(z===null?'undefined (σ = 0)':z.toFixed(5)),
+   'Last return = (latest / previous − 1) × 100 = '+lastReturnPct.toFixed(4)+'%',
+   'Breakout compares latest with previous min '+low.toFixed(5)+' and max '+high.toFixed(5)+'.'
+  ],canTrade:false,
+ };
+}
+function neuronMath({x,w,b,target,rate}){
+ x=num(x,'Input x',-100,100);w=num(w,'Weight w',-100,100);
+ b=num(b,'Bias b',-100,100);target=num(target,'Target y',-100,100);
+ rate=num(rate,'Learning rate',0,1);
+ const predicted=x*w+b,error=predicted-target,loss=.5*error**2;
+ const gradW=error*x,gradB=error;
+ const nextW=w-rate*gradW,nextB=b-rate*gradB;
+ const nextPrediction=nextW*x+nextB,afterLoss=.5*(nextPrediction-target)**2;
+ return {predicted,error,loss,gradW,gradB,nextW,nextB,nextPrediction,afterLoss,steps:[
+  'Forward pass: ŷ = w × x + b = '+w+' × '+x+' + '+b+' = '+predicted.toFixed(5),
+  'Prediction error e = ŷ − y = '+predicted.toFixed(5)+' − '+target+' = '+error.toFixed(5),
+  'Loss L = ½(ŷ − y)² = '+loss.toFixed(6),
+  'Derivative ∂L/∂w = e × x = '+gradW.toFixed(6)+'; ∂L/∂b = e = '+gradB.toFixed(6),
+  'Gradient descent: w′ = w − η∂L/∂w = '+nextW.toFixed(6),
+  'Bias update: b′ = b − η∂L/∂b = '+nextB.toFixed(6),
+  'Recompute the same example: new loss = '+afterLoss.toFixed(6)
+ ],canTrade:false};
+}
+function planningMath({position,goal,penalty}){
+ position=num(position,'Position',-1000,1000);goal=num(goal,'Goal',-1000,1000);
+ penalty=num(penalty,'Action penalty',0,1000);
+ const actions=[-2,-1,0,1,2];
+ const candidates=actions.map(action=>({action,next:position+action,distanceCost:(position+action-goal)**2,effortCost:penalty*action**2,cost:(position+action-goal)**2+penalty*action**2}));
+ candidates.sort((a,b)=>a.cost-b.cost||Math.abs(a.action)-Math.abs(b.action)||a.action-b.action);
+ const best=candidates[0];
+ return {position,goal,penalty,best,candidates,steps:[
+  'Predict the next state: x(next) = x(now) + action (simplified one-step model).',
+  'Cost J(action) = (x(next) − goal)² + λ × action².',
+  'Evaluate actions −2, −1, 0, +1, +2 using the same cost function.',
+  'Choose the lowest-cost candidate: action '+(best.action>=0?'+':'')+best.action+'; J = '+best.cost.toFixed(5)+'.',
+  'After observing the real next state, recalculate. This is a one-step illustration of receding-horizon planning.'
+ ],canTrade:false};
+}
+
+
+// One-head scaled dot-product attention, as in a minimal transformer demonstration.
+// This function computes attention weights; it does not load or train any model.
+function attentionMath({query,keys,values}){
+ if(!Array.isArray(query)||query.length<1||query.length>16)throw new Error('Query must contain 1–16 numbers.');
+ query.forEach((v,i)=>num(v,'Query '+i,-100,100));
+ if(!Array.isArray(keys)||keys.length<2||keys.length>12)throw new Error('Enter 2–12 key vectors.');
+ if(!Array.isArray(values)||values.length!==keys.length)throw new Error('Supply one value per key.');
+ for(const [i,key] of keys.entries()){
+  if(!Array.isArray(key)||key.length!==query.length)throw new Error('Key '+(i+1)+' must match query dimension.');
+  key.forEach((v,j)=>num(v,'Key '+i+':'+j,-100,100));
+  num(values[i],'Value '+(i+1),-1000,1000);
+ }
+ const d=query.length;
+ const raw=keys.map(key=>query.reduce((acc,x,j)=>acc+x*key[j],0));
+ const scores=raw.map(v=>v/Math.sqrt(d));
+ const top=Math.max(...scores),exponents=scores.map(s=>Math.exp(s-top)),denom=exponents.reduce((a,b)=>a+b,0);
+ const weights=exponents.map(x=>x/denom);
+ const output=weights.reduce((acc,weight,i)=>acc+weight*values[i],0);
+ return {dimension:d,rawScores:raw,scaledScores:scores,weights,output,steps:[
+  'Similarity: dot products q · kᵢ = '+raw.map(x=>x.toFixed(4)).join(', '),
+  'Scale each dot product by √d = '+Math.sqrt(d).toFixed(4)+': '+scores.map(x=>x.toFixed(4)).join(', '),
+  'Softmax converts scaled scores to weights: '+weights.map(x=>x.toFixed(4)).join(' + ')+' = 1.',
+  'Context output = Σ(weightᵢ × valueᵢ) = '+output.toFixed(6)+'.',
+  'These weights are mathematical relevance scores, not explanations of a real trained model.'
+ ],canTrade:false};
+}
+
+
+
+// This view runs real local math using illustrative inputs, not live agents or trades.
+function mountCalculations(navigate) {
+ const root=document.getElementById('calculations');if(!root)return;
+ root.innerHTML=`
+ <div class="bh-heading"><div><div class="eyebrow">PRIVATE INTELLIGENCE / MATHEMATICS</div><h1>Black Hole <em>Calculations.</em></h1><p>Trace every number through the core. Each result includes its formula, intermediate values, and limitations.</p></div><span class="pill">LOCAL EXAMPLES · NO ORDERS</span></div>
+ <div class="bh-frame"><div class="bh-visual">
+   <img src="assets/core.jpg" alt="Luminous black hole reference used as the calculation laboratory background"/>
+   <div class="bh-vignette" aria-hidden="true"></div>
+   <div class="bh-orbits" aria-hidden="true"><span></span><span></span><i></i><i></i><i></i></div>
+   <div class="bh-visual-top"><small>INPUT → CALCULATE → EVIDENCE</small><strong id="bh-status">READY</strong></div>
+   <div class="bh-visual-bottom"><strong id="bh-visual-title">PATTERN MATHEMATICS</strong><span id="bh-index">01 / 04</span></div>
+ </div><div class="bh-interactive">
+  <div role="tablist" aria-label="Mathematics demonstrations" class="bh-tabs">
+   <button role="tab" data-mode="pattern" aria-selected="true">01 Patterns</button>
+   <button role="tab" data-mode="neuron" aria-selected="false">02 Learning</button>
+   <button role="tab" data-mode="attention" aria-selected="false">03 Attention</button>
+   <button role="tab" data-mode="plan" aria-selected="false">04 Planning</button>
+  </div>
+  <div id="bh-form"></div><p id="bh-error" role="alert"></p>
+  <div class="bh-result"><small>MATHEMATICAL RESULT</small><h2 id="bh-answer">Ready</h2><p id="bh-explainer">Run a calculation to see the exact result.</p><svg id="bh-chart" viewBox="0 0 460 130" role="img" aria-label="Visualization of calculated numbers"></svg></div>
+ </div></div>
+ <div class="bh-info">
+  <section><div class="eyebrow">OPEN THE MATH</div><h2>Every calculation, step by step</h2><ol id="bh-steps"></ol><p>Examples are not predictions. The simplified neural network and planner cannot replace a trained model or tested trading strategy.</p></section>
+  <section><div class="eyebrow">ACTUAL DATA PIPELINE</div><h2>How your cloud connects</h2>
+   <p><strong>Sources</strong> provide timestamped measurements → <strong>Edge Research</strong> stores provenance and dataset versions → <strong>Calculators</strong> process eligible records → <strong>Research Memory</strong> preserves verified experiment results → <strong>Parallax</strong> displays the evidence.</p>
+   <p>This screen calculates locally from your inputs. It does not silently read cloud data or create real trading activity.</p><button id="bh-open-universe" class="secondary">Open the connected Data Universe</button>
+  </section>
+ </div>`;
+ const $=id=>root.querySelector('#'+id),form=$('bh-form'),tabs=[...root.querySelectorAll('[data-mode]')];
+ let mode='pattern';
+ const f=n=>Number.isFinite(n)?n.toFixed(5):'undefined';
+ const html={
+ pattern:`<label>Observations, oldest to newest<textarea id="bh-series" rows="4">100, 100.4, 100.2, 101.1, 100.8, 101.4, 101.7, 102.2, 102.1, 103</textarea></label><p>Use 6–2000 positive values. Import a local CSV with a <code>value</code> column, or enter your own.</p><input id="bh-csv" type="file" accept=".csv,text/csv" aria-label="Import a CSV with a value column"><button id="bh-run">Calculate pattern statistics</button>`,
+ neuron:`<div class="bh-fields"><label>Input x<input id="bh-x" type="number" value="0.8" step="any"></label><label>Weight w<input id="bh-w" type="number" value="0.5" step="any"></label><label>Bias b<input id="bh-b" type="number" value="0.1" step="any"></label><label>Correct target y<input id="bh-target" type="number" value="0.9" step="any"></label><label>Learning rate η<input id="bh-rate" type="number" value="0.1" min="0" max="1" step="any"></label></div><p>One linear neuron, one training example, one gradient-descent step.</p><button id="bh-run">Calculate a weight update</button>`,
+ attention:`<label>Query vector (comma separated)<input id="bh-query" value="1,0"></label><label>Keys (one vector per line)<textarea id="bh-keys" rows="3">1,0\n0,1\n1,1</textarea></label><label>Values (one number for each key)<input id="bh-attention-values" value="0.3,0.8,0.5"></label><p>Scaled dot-product attention: similarity scores, softmax weights, and weighted sum. These are not trained model explanations.</p><button id="bh-run">Compute attention weights</button>`,
+ plan:`<div class="bh-fields"><label>Current x<input id="bh-pos" type="number" value="0" step="any"></label><label>Goal<input id="bh-goal" type="number" value="3" step="any"></label><label>Effort penalty λ<input id="bh-penalty" type="number" value="0.3" min="0" step="any"></label></div><p>Compare five candidate moves (−2, −1, 0, +1, +2) with a cost function, like a very simplified planner.</p><button id="bh-run">Evaluate possible actions</button>`
+ };
+ function chart(values,kind){
+  const s=$('bh-chart');s.replaceChildren();
+  const mk=(tag,attrs,text)=>{const e=document.createElementNS(s.namespaceURI,tag);for(const [key,val] of Object.entries(attrs))e.setAttribute(key,String(val));if(text!==undefined)e.textContent=text;s.append(e);return e;};
+  for(let y=30;y<120;y+=40)mk('path',{d:'M10 '+y+' H450',stroke:'#ffffff24','stroke-width':1});
+  if(kind==='pattern'){const mi=Math.min(...values),ma=Math.max(...values),span=ma-mi||1;mk('polyline',{points:values.map((v,i)=>(10+i*440/Math.max(1,values.length-1)).toFixed(1)+','+(111-85*(v-mi)/span).toFixed(1)).join(' '),stroke:'#f3d49b','stroke-width':2.5,fill:'none'});}
+  else if(kind==='neuron'){values.forEach((v,i)=>{const h=Math.max(3,Math.min(90,v*65));mk('rect',{x:80+i*180,y:115-h,width:85,height:h,rx:5,fill:i===0?'#cf8669':'#99bde6'});mk('text',{x:80+i*180,y:20,fill:'#dce9f5','font-size':12},(i===0?'Before ':'After ')+f(v));});}
+  else {const ma=Math.max(...values,1),min=Math.min(...values);values.forEach((v,i)=>{const h=Math.max(3,85*v/ma),x=15+i*435/values.length;mk('rect',{x,y:115-h,width:Math.min(60,400/values.length),height:h,rx:4,fill:kind==='attention'?'#a7cef0':v===min?'#edc78f':'#6b85a5'});mk('text',{x:x+8,y:127,fill:'#e1e9f4','font-size':10},kind==='attention'?'K'+(i+1):String(i-2));});}
+ }
+ function calculate(){
+  try{
+   $('bh-error').textContent='';
+   let r,values=null;
+   if(mode==='pattern'){
+    values=form.querySelector('#bh-series').value.trim().split(/[,\s]+/).filter(Boolean).map(Number);
+    r=patternMath(values);
+    $('bh-answer').textContent=r.label;
+    $('bh-explainer').textContent='Mean '+f(r.mean)+' · z-score '+(r.z===null?'undefined':f(r.z))+' · last return '+f(r.lastReturnPct)+'% · return volatility '+f(r.volatilityPct)+'%';
+    chart(values,'pattern');
+   }else if(mode==='neuron'){
+    const val=k=>{const e=form.querySelector('#'+k);if(e.value==='')throw Error('Fill every field.');return Number(e.value);};
+    r=neuronMath({x:val('bh-x'),w:val('bh-w'),b:val('bh-b'),target:val('bh-target'),rate:val('bh-rate')});
+    $('bh-answer').textContent='Loss '+f(r.loss)+' → '+f(r.afterLoss);
+    $('bh-explainer').textContent='Original prediction '+f(r.predicted)+' · updated weight '+f(r.nextW)+' · updated bias '+f(r.nextB);
+    chart([r.loss,r.afterLoss],'neuron');
+   }else if(mode==='attention'){
+    const list=s=>s.trim().split(/[\s,]+/).filter(Boolean).map(Number);
+    const query=list(form.querySelector('#bh-query').value),keys=form.querySelector('#bh-keys').value.trim().split(/\r?\n/).filter(Boolean).map(list),values=list(form.querySelector('#bh-attention-values').value);
+    r=attentionMath({query,keys,values});
+    $('bh-answer').textContent='Context value '+f(r.output);
+    $('bh-explainer').textContent='Softmax weights: '+r.weights.map(x=>f(x)).join(' · ');
+    chart(r.weights,'attention');
+   }else{
+    const val=k=>{const e=form.querySelector('#'+k);if(e.value==='')throw Error('Fill every field.');return Number(e.value);};
+    r=planningMath({position:val('bh-pos'),goal:val('bh-goal'),penalty:val('bh-penalty')});
+    $('bh-answer').textContent='Best move '+(r.best.action>=0?'+':'')+r.best.action;
+    $('bh-explainer').textContent='Predicted next position '+f(r.best.next)+' · lowest model cost '+f(r.best.cost);
+    chart([-2,-1,0,1,2].map(a=>r.candidates.find(x=>x.action===a).cost),'plan');
+   }
+   $('bh-steps').replaceChildren();r.steps.forEach(step=>{const li=document.createElement('li');li.textContent=step;$('bh-steps').append(li);});
+   $('bh-status').textContent='CALCULATED';root.classList.add('bh-processed');
+  }catch(err){$('bh-error').textContent=String(err.message??err);$('bh-status').textContent='INPUT ERROR';root.classList.remove('bh-processed');}
+ }
+ function render(){
+  form.innerHTML=html[mode];$('bh-error').textContent='';$('bh-answer').textContent='Ready';$('bh-explainer').textContent='Run a calculation to inspect every step.';
+  $('bh-chart').replaceChildren();$('bh-steps').replaceChildren();$('bh-status').textContent='READY';root.classList.remove('bh-processed');
+  $('bh-visual-title').textContent=({pattern:'PATTERN STATISTICS',neuron:'NEURAL LEARNING',attention:'TRANSFORMER ATTENTION',plan:'PREDICTIVE PLANNING'})[mode];
+  $('bh-index').textContent=({pattern:'01',neuron:'02',attention:'03',plan:'04'})[mode]+' / 04';
+  tabs.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.mode===mode)));
+  form.querySelector('#bh-run').onclick=calculate;
+  if(mode==='pattern')form.querySelector('#bh-csv').onchange=async e=>{
+   try{const file=e.target.files[0];if(!file)return;if(file.size>1000000)throw Error('CSV must be smaller than 1 MB.');
+    const lines=(await file.text()).replace(/\r/g,'').trim().split('\n'),headers=lines.shift().split(',').map(s=>s.trim().toLowerCase()),idx=headers.indexOf('value');
+    if(idx<0)throw Error('CSV needs a column called value.');if(lines.length>2000)throw Error('Maximum 2000 numeric observations.');
+    const values=lines.filter(Boolean).map(row=>Number(row.split(',')[idx]?.trim()));
+    if(values.some(v=>!Number.isFinite(v)))throw Error('CSV contains invalid values.');
+    form.querySelector('#bh-series').value=values.join(', ');$('bh-error').textContent='Local import: '+values.length+' observations. No cloud upload.';
+   }catch(error){$('bh-error').textContent=error.message;}
+  };
+ }
+ tabs.forEach(t=>t.onclick=()=>{mode=t.dataset.mode;render();});
+ $('bh-open-universe').onclick=()=>navigate('parallax');
+ render();
+}
+
+
+// Spatial context map. Filaments are visual grouping, never inferred correlations.
+function mountCosmos(host,onSelect){
+ const canvas=document.createElement('canvas');canvas.tabIndex=0;canvas.setAttribute('aria-label','Context map. Drag to pan, use zoom buttons, select a labelled role for evidence.');host.append(canvas);
+ const ctx=canvas.getContext('2d');let width=900,height=600,zoom=1,pan={x:0,y:0},drag=null,moved=false,events=[],replay=0,frame=0,disposed=false;
+ const names=['Scout','Filter','Analyst','Risk','Executor','Logger'];
+ const nodes=names.map((name,i)=>({name,x:Math.cos(i*Math.PI/3-.4)*280,y:Math.sin(i*Math.PI/3-.4)*170}));
+ const stars=Array.from({length:650},(_,i)=>({x:Math.sin(i*78.233)*.5+.5,y:Math.sin(i*37.719)*.5+.5,r:i%17===0?1.2:.55}));
+ const controls=document.createElement('div');controls.className='map-controls';host.append(controls);
+ const make=(label,fn)=>{const b=document.createElement('button');b.textContent=label;b.onclick=fn;controls.append(b);};
+ make('+',()=>zoom=Math.min(2.5,zoom*1.2));make('−',()=>zoom=Math.max(.45,zoom/1.2));make('Reset view',()=>{zoom=1;pan={x:0,y:0};});make('Replay recorded handoffs',()=>{replay=events.length?performance.now():0;});
+ const accessible=document.createElement('div');accessible.className='map-role-list';host.append(accessible);
+ for(const n of nodes){const b=document.createElement('button');b.textContent=n.name;b.onclick=()=>onSelect(n.name,events.filter(e=>e.agent===n.name));accessible.append(b);}
+ const ro=new ResizeObserver(()=>{const r=host.getBoundingClientRect();width=r.width;height=host.clientHeight;const d=Math.min(devicePixelRatio||1,2);canvas.width=width*d;canvas.height=height*d;canvas.style.width=width+'px';canvas.style.height=height+'px';ctx.setTransform(d,0,0,d,0,0);});ro.observe(host);
+ function coord(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left-width/2-pan.x)/zoom,y:(e.clientY-r.top-height/2-pan.y)/zoom};}
+ canvas.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY};moved=false;canvas.setPointerCapture(e.pointerId);};canvas.onpointermove=e=>{if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;pan.x+=dx;pan.y+=dy;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;drag={x:e.clientX,y:e.clientY};}};
+ canvas.onpointerup=e=>{if(!moved){const p=coord(e),n=nodes.find(n=>Math.hypot(n.x-p.x,n.y-p.y)<50);if(n)onSelect(n.name,events.filter(e=>e.agent===n.name));}drag=null;};canvas.onpointercancel=()=>drag=null;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ function draw(t){if(disposed)return;frame=requestAnimationFrame(draw);if(host.offsetParent===null)return;ctx.clearRect(0,0,width,height);ctx.fillStyle='#030610';ctx.fillRect(0,0,width,height);
+ for(const s of stars){ctx.fillStyle=s.r>1?'#c6d8ff':'#637b9b';ctx.beginPath();ctx.arc(s.x*width,s.y*height,s.r,0,7);ctx.fill();}
+ ctx.save();ctx.translate(width/2+pan.x,height/2+pan.y);ctx.scale(zoom,zoom);
+ const glow=ctx.createRadialGradient(0,0,0,0,0,330);glow.addColorStop(0,'#b37b2726');glow.addColorStop(1,'#0c142000');ctx.fillStyle=glow;ctx.fillRect(-500,-400,1000,800);
+ for(let i=0;i<160;i++){const n=nodes[i%6],spread=(i/6-13)*4;ctx.beginPath();ctx.moveTo(n.x+spread,n.y+spread*.35);ctx.bezierCurveTo(n.x*.65+spread, n.y*.2-spread,100+spread,-65+spread,0,0);ctx.strokeStyle=i%5===0?'#d9b56960':'#a7813530';ctx.lineWidth=i%5===0?.7:.4;ctx.stroke();}
+ ctx.beginPath();ctx.arc(0,0,42,0,7);ctx.fillStyle='#010207';ctx.shadowColor='#ffe5a2';ctx.shadowBlur=24;ctx.fill();ctx.strokeStyle='#ead29c';ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#f6e6c1';ctx.textAlign='center';ctx.font='11px system-ui';ctx.fillText('CONTEXT',0,4);
+ for(const n of nodes){const list=events.filter(e=>e.agent===n.name);ctx.beginPath();ctx.arc(n.x,n.y,list.length?6:4,0,7);ctx.fillStyle=list.length?'#ffd990':'#8395b3';ctx.fill();ctx.font='13px system-ui';ctx.fillStyle='#e9e8e3';ctx.fillText(n.name,n.x,n.y-17);ctx.fillStyle='#8f9bb2';ctx.font='10px system-ui';ctx.fillText(list.length?list.length+' recorded events':'Waiting for evidence',n.x,n.y+23);}
+ if(replay&&!reduced.matches){const step=Math.floor((t-replay)/750),progress=((t-replay)%750)/750;if(step>=events.length){replay=0;}else{const n=nodes.find(n=>n.name===events[step].agent);if(n){ctx.fillStyle='#fff0bb';ctx.shadowColor='#ffc568';ctx.shadowBlur=15;ctx.beginPath();ctx.arc(n.x*progress,n.y*progress,4,0,7);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.fillText('RECORDED REPLAY · '+n.name,0,260);}}}
+ ctx.restore();}
+ frame=requestAnimationFrame(draw);return {update(next){events=next;},destroy(){disposed=true;cancelAnimationFrame(frame);ro.disconnect();}};
+}
+
+
+function mountAgentChat(host,getState){
+ const roles=['Coordinator','Scout','Filter','Analyst','Risk','Executor','Logger'],threads=Object.fromEntries(roles.map(r=>[r,[]]));let selected='Scout',busy=false;
+ try{const saved=JSON.parse(localStorage.getItem('edge-chat-v1'));for(const r of roles)if(Array.isArray(saved?.[r]))threads[r]=saved[r].filter(m=>typeof m.sender==='string'&&typeof m.text==='string').slice(-60);}catch{}
+ host.innerHTML='<div class="chat-head"><h2>Agent conversations</h2><span>Role conversations + connected research evidence</span></div><div class="chat-tabs"></div><div class="chat-messages" aria-live="polite"></div><form class="chat-compose"><label>Message your selected agent<input maxlength="1500" placeholder="Show your evidence, or /health" required></label><button>Send</button></form><details><summary>Connect research tools</summary><label>Research token<input class="chat-token" type="password" autocomplete="off"></label><p>Token stays in memory. Commands: /health, /datasets, /review DATASET_ID, /job JOB_ID. Natural-language messages use the configured Grok key. /evidence reads local paper activity. /history loads saved server replies.</p></details>';
+ const tabs=host.querySelector('.chat-tabs'),messages=host.querySelector('.chat-messages'),form=host.querySelector('form'),input=form.querySelector('input'),token=host.querySelector('.chat-token');
+ window.addEventListener('edge-select-agent',e=>{if(roles.includes(e.detail)){selected=e.detail;paint();}});
+ function paint(){try{localStorage.setItem('edge-chat-v1',JSON.stringify(threads));}catch{}for(const b of tabs.children)b.classList.toggle('active',b.textContent===selected);messages.replaceChildren();const list=threads[selected];if(!list.length){const p=document.createElement('p');p.textContent=selected+' is waiting. Ask for evidence or use a research command.';messages.append(p);}for(const m of list){const article=document.createElement('article'),label=document.createElement('small'),body=document.createElement('pre');label.textContent=m.sender;body.textContent=m.text;article.append(label,body);messages.append(article);}messages.scrollTop=messages.scrollHeight;}
+ for(const r of roles){const b=document.createElement('button');b.textContent=r;b.onclick=()=>{selected=r;paint();};tabs.append(b);}
+ async function request(task,body){if(!token.value)throw Error('Enter your research token to connect.');const r=await fetch('https://mhahkbssltukjhusjsjf.supabase.co/functions/v1/edge-research?task='+task,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+token.value},body:JSON.stringify(body),signal:AbortSignal.timeout(35000)});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d;}
+ async function tool(name,args){if(!token.value)throw Error('Enter the research token in Connect research tools first.');const r=await fetch('https://mhahkbssltukjhusjsjf.supabase.co/functions/v1/edge-research?task=tool',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+token.value},body:JSON.stringify({name,arguments:args}),signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok)throw Error(d.error||'Research request failed');return d;}
+ form.onsubmit=async e=>{e.preventDefault();if(busy)return;const text=input.value.trim();if(!text)return;const role=selected;threads[role].push({sender:'You',text});input.value='';paint();busy=true;window.dispatchEvent(new CustomEvent('edge-agent-state',{detail:{role,state:'running'}}));host.dataset.working='true';form.querySelector('button').disabled=true;
+ try{let reply,source='Local evidence response';const [command,id]=text.split(/\s+/);
+ if(command.startsWith('/')){source='Research API result';let result;
+ if(command==='/history')result=await request('chat',{role,historyOnly:true});
+ else if(command==='/evidence'){source='Local paper evidence';result={role,events:getState().events.filter(e=>e.agent===role).slice(-15)};}
+ else if(command==='/health')result=await tool('get_data_health',{});
+ else if(command==='/datasets')result=await tool('list_datasets',{});
+ else if(command==='/review'&&id)result=await tool('start_analysis_job',{datasetId:id,kind:'agent',requestId:crypto.randomUUID()});
+ else if(command==='/job'&&id)result=await tool('get_job_status',{id});
+ else throw Error('Use /health, /datasets, /review DATASET_ID, or /job JOB_ID.');reply=JSON.stringify(result,null,2);
+ }else{const answer=await request('chat',{role,message:text});reply=answer.reply;source='AI research reply · '+answer.model;}
+ window.dispatchEvent(new CustomEvent('edge-agent-state',{detail:{role,state:'completed'}}));
+ threads[role].push({sender:role+' · '+source,text:reply});
+ }catch(e){window.dispatchEvent(new CustomEvent('edge-agent-state',{detail:{role,state:'failed'}}));threads[role].push({sender:role+' · Request failed',text:e.message});}finally{busy=false;host.dataset.working='false';form.querySelector('button').disabled=false;paint();}};
+ const exportButton=document.createElement('button');exportButton.textContent='Export conversations';exportButton.onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(threads,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='agent-conversations.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};host.append(exportButton);paint();
+}
+
+
+function mountScene(host,{mode='galaxy',select=()=>{}}={}){
+ const canvas=document.createElement('canvas');canvas.setAttribute('aria-label',mode==='galaxy'?'Animated galaxy with six selectable agent bodies':'Animated money scene showing recorded paper results');host.prepend(canvas);const c=canvas.getContext('2d');let w=900,h=500,frame,last=0,active=true,focus=0,zoom=1,events=[],working=null;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)');let seed=783;const rand=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646;};
+ const particles=Array.from({length:2200},(_,i)=>({r:Math.pow(rand(),.7),a:rand()*6.28,arm:i%4,spread:(rand()-.5)*.55,z:(rand()-.5),size:rand()*1.2+.2}));
+ const stars=Array.from({length:190},()=>({x:rand(),y:rand(),s:rand()+.3}));const names=['Scout','Filter','Analyst','Risk','Executor','Logger'];let hit=[];
+ const ro=new ResizeObserver(()=>{w=host.clientWidth;h=host.clientHeight;const d=Math.min(devicePixelRatio||1,1.5);canvas.width=w*d;canvas.height=h*d;canvas.style.width=w+'px';canvas.style.height=h+'px';c.setTransform(d,0,0,d,0,0);});ro.observe(host);
+ const io=new IntersectionObserver(es=>active=es[0].isIntersecting);io.observe(host);
+ canvas.onclick=e=>{const r=canvas.getBoundingClientRect(),n=hit.find(n=>Math.hypot(e.clientX-r.left-n.x,e.clientY-r.top-n.y)<28);if(n)select(n.name);};
+ canvas.onpointermove=e=>{const r=canvas.getBoundingClientRect();focus=(e.clientX-r.left-w/2)/w*.08;};canvas.onpointerleave=()=>focus=0;
+ const controls=document.createElement('div');controls.className='scene-controls';host.append(controls);for(const [label,fn] of [['−',()=>zoom=Math.max(.7,zoom-.1)],['+',()=>zoom=Math.min(1.6,zoom+.1)]]){const b=document.createElement('button');b.textContent=label;b.onclick=fn;controls.append(b);}
+ function draw(t){frame=requestAnimationFrame(draw);if(!active||document.hidden||t-last<(reduced.matches?300:32))return;last=t;const time=reduced.matches?0:t*.000012;c.clearRect(0,0,w,h);c.fillStyle='#030610';c.fillRect(0,0,w,h);
+ for(const s of stars){c.fillStyle='#91a7d077';c.fillRect(s.x*w,s.y*h,s.s,s.s);}const cx=w*.5,cy=h*.49,R=Math.min(w*.43,h*.67)*zoom;
+ c.save();c.translate(cx,cy);c.rotate(-.34+focus);const glow=c.createRadialGradient(0,0,0,0,0,R);glow.addColorStop(0,mode==='galaxy'?'#ffdfab80':'#d6b17628');glow.addColorStop(.25,'#b1978340');glow.addColorStop(.65,'#31507724');glow.addColorStop(1,'#00000000');c.fillStyle=glow;c.fillRect(-R,-R,R*2,R*2);
+ for(const p of particles){const r=mode==='money'?R*(.25+p.r*.75):R*p.r;const angle=mode==='money'?p.a+time*2:p.arm*Math.PI/2+p.r*8+p.spread+time;const x=Math.cos(angle)*r,y=Math.sin(angle)*r*(mode==='money'?.2:.48)+p.z*(mode==='money'?5:15)*p.r;const brightness=1-p.r;c.fillStyle=mode==='money'?`rgba(255,${190+brightness*50|0},${120+brightness*90|0},${.2+brightness*.6})`:(p.r<.3?`rgba(255,222,177,${.4+brightness*.5})`:`rgba(157,190,235,${.2+brightness*.5})`);c.beginPath();c.arc(x,y,p.size*(mode==='money'?.65:1),0,7);c.fill();}
+ if(mode==='money'){c.shadowColor='#ffe7ba';c.shadowBlur=30;c.strokeStyle='#ffe8bc';c.lineWidth=3;c.beginPath();c.arc(0,0,R*.24,0,7);c.stroke();c.shadowBlur=0;c.fillStyle='#010207';c.fill();}else{const core=c.createRadialGradient(0,0,0,0,0,R*.14);core.addColorStop(0,'#fff3dd');core.addColorStop(.2,'#ffdeb9bb');core.addColorStop(1,'#f3c28500');c.fillStyle=core;c.fillRect(-R*.14,-R*.14,R*.28,R*.28);}
+ c.restore();hit=[];
+ if(mode==='galaxy')names.forEach((name,i)=>{const angle=i*Math.PI/3+time*.6,x=cx+Math.cos(angle)*R*.92,y=cy+Math.sin(angle)*R*.48;hit.push({name,x,y});const busy=name===working;c.strokeStyle=busy?'#ffe8a5':'#8ca5c7';c.lineWidth=1;c.beginPath();c.ellipse(x,y,14,6,time*8+i,0,7);c.stroke();c.fillStyle=busy?'#fff5ce':'#99b7d8';c.shadowColor=c.fillStyle;c.shadowBlur=busy?20:7;c.beginPath();c.arc(x,y,4,0,7);c.fill();c.shadowBlur=0;c.font='11px system-ui';c.textAlign='center';c.fillStyle='#dce4ee';c.fillText(name,x,y+26);if(busy){c.fillStyle='#e4c993';c.fillText('Request running',x,y+42);}});
+ for(const e of events){const age=(t-e.at)/1800;if(age>=1)continue;const inward=e.value>=0;const r=R*(inward?1-age:age)*.7,a=e.angle+age*3;const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r*.4;c.fillStyle=inward?'#ffdc8f':'#ef9e9a';c.beginPath();c.arc(x,y,4,0,7);c.fill();c.font='12px system-ui';c.fillText('Paper P&L '+(e.value>=0?'+':'')+e.value.toFixed(2),cx,cy+R*.6);}events=events.filter(e=>t-e.at<1800);
+ }
+ frame=requestAnimationFrame(draw);return {working(role){working=role;},money(value){if(Number.isFinite(value))events.push({value,at:performance.now(),angle:rand()*6.28});},destroy(){cancelAnimationFrame(frame);ro.disconnect();io.disconnect();}};
+}
+function soundSystem(){let audio=null,enabled=false;return {async toggle(){if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();await audio.resume();enabled=!enabled;return enabled;},play(kind='done'){if(!enabled||!audio)return;const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.type='sine';o.frequency.setValueAtTime(kind==='error'?180:kind==='start'?330:520,t);o.frequency.exponentialRampToValueAtTime(kind==='error'?120:780,t+.18);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.035,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+.3);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.32);}};}
+
+
+function mountParallax(){
+ const root=document.getElementById('parallax');let records=[],selected=null,source='disconnected',controller=null;
+ const state={query:'',kind:'all',market:'all',sort:'newest'};let archiveEpoch=0;
+ root.innerHTML=`<div class="px-heading"><div><div class="eyebrow">PRIVATE INTELLIGENCE NETWORK</div><h1>Your evidence. Connected.</h1><p>Explore sources, datasets, patterns and experiments in one workspace.</p></div><span id="px-source" class="pill">NOT CONNECTED</span></div><div class="px-tools"><input id="px-search" aria-label="Search records" placeholder="Search your universe…"><select id="px-kind" aria-label="Record type"><option value="all">All records</option><option>source</option><option>dataset</option><option>pattern</option><option>experiment</option></select><select id="px-market" aria-label="Market"><option value="all">All markets</option><option>forex</option><option>crypto</option><option>equities</option><option>commodities</option><option>prediction</option><option>weather</option><option>other</option></select><select id="px-sort" aria-label="Sort records"><option value="newest">Newest first</option><option value="name">Name</option></select><button id="px-export">Export filtered JSON</button></div><div class="px-layout"><div><div id="px-graph" class="px-graph"></div><div class="px-summary" id="px-summary"></div><div id="px-results"></div></div><aside class="px-inspector"><div class="eyebrow">EVIDENCE PANEL</div><h2 id="px-title">Select a record</h2><div id="px-detail"><p>Open a node or result to inspect its provenance, relationships, and research evidence.</p></div></aside></div><details class="px-connect"><summary>Backend connection</summary><p>Your existing authenticated Edge Research function supplies the records. Credentials stay in memory and are not exported.</p><label>Edge Research function URL<input id="px-api" type="url" value="https://mhahkbssltukjhusjsjf.supabase.co/functions/v1/edge-research"></label><label>Access token<input id="px-token" type="password" autocomplete="off"></label><button id="px-load">Connect and load</button><button id="px-disconnect">Disconnect</button><button id="px-demo" class="secondary">Explore labelled example data</button><p id="px-status" role="status">No data loaded.</p></details><details class="px-connect"><summary>Pattern research laboratory</summary><p>Submit 30–2000 timestamped numerical observations as JSON. Analysis is descriptive only, not trained or saved. Source identity is user-supplied and unverified.</p><label>Series JSON (name, source, market, asOf, points with time, availableAt, value)<textarea id="px-series" rows="5" spellcheck="false" placeholder='{"name":"BTC/USD","source":"My verified CSV","market":"crypto","asOf":"2026-10-29T15:00:00Z","points":[{"time":"2026-10-29T14:00:00Z","availableAt":"2026-10-29T14:00:00Z","value":100}]}'></textarea></label><button id="px-analyze">Analyze imported series</button><pre id="px-pattern-output" aria-live="polite">No analysis yet.</pre></details>`;
+ const $=id=>document.getElementById(id),el=(tag,text,cls)=>{const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;};
+ function visible(){return records.filter(r=>(state.kind==='all'||r.kind===state.kind)&&(state.market==='all'||r.market===state.market)&&[r.name,r.description,r.id].join(' ').toLowerCase().includes(state.query)).sort((a,b)=>state.sort==='name'?a.name.localeCompare(b.name):Date.parse(b.updatedAt)-Date.parse(a.updatedAt));}
+ function select(r){selected=r.id;$('px-title').textContent=r.name;const box=$('px-detail');box.replaceChildren();for(const [label,value] of [['Type',r.kind],['Market',r.market],['Status',r.status],['Updated',r.updatedAt],['Description',r.description],['Source',r.provenance?.source],['Dataset version',r.provenance?.version],['Observed at',r.provenance?.observedAt]]){box.append(el('small',label),el('p',value??'Not supplied'));}if(r.provenance?.url){try{const u=new URL(r.provenance.url);if(u.protocol==='https:'){const a=el('a','Open original source ↗');a.href=u.href;a.target='_blank';a.rel='noopener noreferrer';box.append(a);}}catch{}}
+ box.append(el('h3','Evidence'));const pre=el('pre',JSON.stringify(r.evidence??{status:'No supporting evidence supplied'},null,2));box.append(pre,el('h3','Related records'));for(const id of r.relatedIds??[]){const other=records.find(x=>x.id===id);if(other){const b=el('button',other.name,'px-related');b.onclick=()=>select(other);box.append(b);}}}
+ function render(){const rows=visible();$('px-source').textContent=source==='example'?'EXAMPLE DATA':source==='api'?'CONNECTED':'NOT CONNECTED';$('px-summary').textContent=rows.length+' matching records · '+records.filter(r=>r.kind==='pattern').length+' pattern hypotheses · connections show supplied relationships, not causation';$('px-results').replaceChildren();const graph=$('px-graph');graph.replaceChildren();
+ if(!rows.length){graph.append(el('div',records.length?'No records match these filters.':'Connect your data to illuminate the universe.','px-empty'));return;}
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 900 460');svg.setAttribute('aria-label','Record relationship map');graph.append(svg);const shown=rows.slice(0,60),points=shown.map((r,i)=>({r,x:450+Math.cos(i*2.399)*Math.sqrt((i+1)/shown.length)*355,y:230+Math.sin(i*2.399)*Math.sqrt((i+1)/shown.length)*180}));
+ for(const p of points)for(const id of p.r.relatedIds??[]){const q=points.find(q=>q.r.id===id);if(!q)continue;const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d',`M${p.x},${p.y} Q450,230 ${q.x},${q.y}`);path.setAttribute('class','px-filament');svg.append(path);}
+ for(const p of points){const g=document.createElementNS(svg.namespaceURI,'g');g.setAttribute('tabindex','0');g.setAttribute('role','button');g.setAttribute('aria-label',p.r.name);const circle=document.createElementNS(svg.namespaceURI,'circle');circle.setAttribute('cx',p.x);circle.setAttribute('cy',p.y);circle.setAttribute('r',p.r.kind==='pattern'?'7':'5');circle.setAttribute('class','px-node '+p.r.kind);const text=document.createElementNS(svg.namespaceURI,'text');text.setAttribute('x',p.x+12);text.setAttribute('y',p.y+4);text.textContent=p.r.name.slice(0,23);g.append(circle,text);g.onclick=()=>select(p.r);g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(p.r);}};svg.append(g);}
+ for(const r of rows){const b=el('button','','px-record');b.append(el('span',r.kind.toUpperCase(),'eyebrow'),el('strong',r.name),el('span',r.market+' · '+r.status));b.onclick=()=>select(r);$('px-results').append(b);}if(rows.length>60)graph.append(el('small','Map shows the first 60 filtered records; every result remains available below.'));}
+ for(const [id,key] of [['px-search','query'],['px-kind','kind'],['px-market','market'],['px-sort','sort']])$(id).oninput=e=>{state[key]=e.target.value.toLowerCase();render();};
+ $('px-load').onclick=async()=>{archiveEpoch++;controller?.abort();controller=new AbortController();const request=controller;$('px-load').disabled=true;try{const base=new URL($('px-api').value);if(base.protocol!=='https:')throw Error('Use an HTTPS API base URL.');if(base.username||base.password||base.search||base.hash)throw Error('Do not put credentials or parameters in the API URL.');$('px-status').textContent='Loading authenticated records…';const u=new URL(base.href);u.searchParams.set('task','universe');const response=await fetch(u,{headers:{authorization:'Bearer '+$('px-token').value},signal:request.signal,redirect:'error'});if(!response.ok)throw Error('Backend returned HTTP '+response.status);const data=await response.json();if(!Array.isArray(data.records)||data.records.length>5000)throw Error('Expected records array, maximum 5,000 records per response.');const ids=new Set();for(const r of data.records){if(typeof r.id!=='string'||ids.has(r.id)||typeof r.name!=='string'||!['source','dataset','pattern','experiment'].includes(r.kind)||typeof r.market!=='string'||!Number.isFinite(Date.parse(r.updatedAt))||(r.relatedIds!==undefined&&(!Array.isArray(r.relatedIds)||r.relatedIds.some(x=>typeof x!=='string'))))throw Error('Backend record schema is invalid.');ids.add(r.id);}if(request!==controller)return;records=data.records;source='api';render();$('px-status').textContent='Loaded '+records.length+' records.';await loadArchive();}catch(e){if(request===controller)$('px-status').textContent=e.name==='AbortError'?'Request cancelled.':e.message;}finally{if(request===controller)$('px-load').disabled=false;}};
+ $('px-disconnect').onclick=()=>{archiveEpoch++;$('px-saved-results').replaceChildren();$('px-archive-series').replaceChildren();$('px-archive-output').textContent='Disconnected.';controller?.abort();controller=null;$('px-load').disabled=false;$('px-token').value='';records=[];source='disconnected';selected=null;$('px-title').textContent='Select a record';$('px-detail').replaceChildren();$('px-status').textContent='Disconnected. Loaded records cleared.';render();};
+ $('px-demo').onclick=()=>{controller?.abort();controller=null;$('px-load').disabled=false;source='example';records=[{id:'example-source',kind:'source',name:'Example FX observations',market:'forex',status:'illustrative',description:'Synthetic interface example. Not connected market data.',relatedIds:['example-data']},{id:'example-data',kind:'dataset',name:'Example EUR/USD dataset',market:'forex',status:'illustrative',relatedIds:['example-test']},{id:'example-test',kind:'experiment',name:'Example trend investigation',market:'forex',status:'not tested',relatedIds:['example-pattern']},{id:'example-pattern',kind:'pattern',name:'Example volatility hypothesis',market:'forex',status:'unverified',description:'No statistical finding or profit is claimed.',relatedIds:['example-data']}].map(r=>({...r,updatedAt:new Date().toISOString()}));render();$('px-status').textContent='Example mode. No backend data or results are represented.';};
+ $('px-analyze').onclick=async()=>{const b=$('px-analyze');b.disabled=true;try{const base=new URL($('px-api').value);if(base.protocol!=='https:'||base.username||base.password||base.search||base.hash)throw Error('Use the private Edge Research HTTPS function URL without parameters.');if(!$('px-token').value)throw Error('Enter your research access token first.');const raw=$('px-series').value;if(raw.length>150000)throw Error('Series input is too large.');const args=JSON.parse(raw);if(!args||typeof args!=='object'||Array.isArray(args))throw Error('Enter a series JSON object.');const u=new URL(base.href);u.searchParams.set('task','tool');const response=await fetch(u,{method:'POST',headers:{'authorization':'Bearer '+$('px-token').value,'content-type':'application/json'},body:JSON.stringify({name:'analyze_numeric_series',arguments:args}),redirect:'error',signal:AbortSignal.timeout(25000)});const output=await response.json();if(!response.ok)throw Error(output.error||'Analysis HTTP '+response.status);$('px-pattern-output').textContent=JSON.stringify(output,null,2);}catch(e){$('px-pattern-output').textContent='Analysis error: '+String(e.message??e);}finally{b.disabled=false;}};
+ const archivePanel=el('section','','px-connect');archivePanel.innerHTML=`<h2>Analyze your archived prices</h2><p>Use observations already stored in your private archive. Calculations run without an AI provider and save their inputs and results.</p><label>Archived series<select id="px-archive-series" aria-label="Archived numerical series"></select></label><button id="px-archive-refresh">Refresh series & saved results</button><button id="px-archive-run" disabled>Calculate & save</button><p id="px-archive-status" role="status">Connect above to load archived series.</p><div id="px-saved-results"></div><pre id="px-archive-output" aria-live="polite">No saved analysis selected.</pre>`;root.append(archivePanel);
+ async function archiveTool(name,args={}){const u=new URL($('px-api').value);if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash)throw Error('Use your private HTTPS function URL without parameters.');if(!$('px-token').value)throw Error('Connect with your research access token first.');u.searchParams.set('task','tool');const r=await fetch(u,{method:'POST',headers:{authorization:'Bearer '+$('px-token').value,'content-type':'application/json'},body:JSON.stringify({name,arguments:args}),redirect:'error',signal:AbortSignal.timeout(25000)});const d=await r.json();if(!r.ok)throw Error(d.error||'Research HTTP '+r.status);return d;}
+ async function loadArchive(){const epoch=archiveEpoch;try{const [data,saved]=await Promise.all([archiveTool('list_archive_series'),archiveTool('list_numeric_results')]);if(epoch!==archiveEpoch)return;const select=$('px-archive-series');const previous=select.value;select.replaceChildren();for(const x of data.series){const o=el('option',x.name+' · '+x.source+' · '+x.samples+' / '+x.minimumSamples+' samples'+(x.ready?' · ready':''));o.value=x.id;o.dataset.ready=String(x.ready);select.append(o);}if(data.series.some(x=>x.id===previous))select.value=previous;select.onchange=()=>{$('px-archive-run').disabled=select.selectedOptions[0]?.dataset.ready!=='true';};select.onchange();$('px-archive-status').textContent=data.series.filter(x=>x.ready).length+' series ready · '+saved.results.length+' saved analyses';const box=$('px-saved-results');box.replaceChildren();for(const r of saved.results){const b=el('button',r.name+' · '+new Date(r.created_at).toLocaleString(),'px-related');b.onclick=async()=>{try{const d=await archiveTool('get_numeric_result',{id:String(r.id)});if(epoch===archiveEpoch)$('px-archive-output').textContent=JSON.stringify(d.details,null,2);}catch(e){if(epoch===archiveEpoch)$('px-archive-output').textContent=e.message;}};box.append(b);}}catch(e){if(epoch===archiveEpoch)$('px-archive-status').textContent=e.message;}}
+ $('px-archive-refresh').onclick=loadArchive;
+ $('px-archive-run').onclick=async()=>{const epoch=archiveEpoch,b=$('px-archive-run');b.disabled=true;$('px-archive-status').textContent='Calculating and saving archived observations…';try{const r=await archiveTool('analyze_archived_series',{seriesId:$('px-archive-series').value});if(epoch!==archiveEpoch)return;$('px-archive-output').textContent=JSON.stringify({savedResultId:r.id,cached:r.cached,fingerprint:r.fingerprint,report:r.report},null,2);await loadArchive();const graph=await archiveTool('get_universe');if(epoch===archiveEpoch){records=graph.records;source='api';render();}}catch(e){if(epoch===archiveEpoch)$('px-archive-status').textContent=e.message;}finally{if(epoch===archiveEpoch)b.disabled=$('px-archive-series').selectedOptions[0]?.dataset.ready!=='true';}};
+ $('px-export').onclick=()=>{const rows=visible();const url=URL.createObjectURL(new Blob([JSON.stringify({mode:source,exportedAt:new Date().toISOString(),filters:state,records:rows},null,2)],{type:'application/json'}));const a=el('a','');a.href=url;a.download='parallax-'+source+'-records.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};render();
+}
+
+
+function mountImmersive(navigate){
+ const root=document.createElement('section');root.id='observatory';root.className='page observatory';root.innerHTML=`<div class="observatory-sky"><img src="assets/galaxy.jpg" alt="Spiral galaxy with luminous core and intricate dust lanes"><video muted loop playsinline preload="none" aria-hidden="true"></video></div><canvas aria-hidden="true"></canvas><div class="observatory-shade"></div><div class="observatory-top"><span>PARALLAX <small>PRIVATE OBSERVATORY</small></span><div class="scene-switch"><button id="scene-control">View intelligence core</button><button id="motion-control">Pause motion</button></div></div><div class="observatory-copy"><p class="eyebrow">A DIFFERENT PERSPECTIVE</p><h1>Intelligence,<br>without limits<br><em>to exploration.</em></h1><p>Your markets. Your research. One connected universe.</p><button class="enter-universe">Explore your universe <span>↗</span></button></div><div class="observatory-destinations"><button data-destination="parallax"><small>01 / DISCOVER</small><strong>Data universe</strong><span>Follow the evidence ↗</span></button><button data-destination="conversations"><small>02 / INVESTIGATE</small><strong>Agent conversations</strong><span>Ask a deeper question ↗</span></button><button data-destination="money"><small>03 / MEASURE</small><strong>Paper performance</strong><span>Inspect your results ↗</span></button></div><div class="observatory-bottom"><span>VISUAL AMBIENCE · NOT LIVE MARKET ACTIVITY</span><span>MOVE TO EXPLORE THE DEPTH</span></div>`;
+ document.querySelector('main').prepend(root);let paused=matchMedia('(prefers-reduced-motion: reduce)').matches;const sky=root.querySelector('.observatory-sky'),video=root.querySelector('video'),button=root.querySelector('#motion-control');
+ function updateMotion(){root.classList.toggle('motion-paused',paused);button.textContent=paused?'Resume motion':'Pause motion';button.setAttribute('aria-pressed',String(paused));if(paused)video.pause();else if(video.src)video.play().catch(()=>{});}
+ let core=false;root.querySelector('#scene-control').onclick=()=>{core=!core;root.classList.toggle('core-view',core);root.querySelector('.observatory-sky img').src=core?'assets/core.jpg':'assets/galaxy.jpg';root.querySelector('.observatory-sky img').alt=core?'Luminous black hole accretion disk':'Spiral galaxy with luminous core and intricate dust lanes';root.querySelector('#scene-control').textContent=core?'View galaxy':'View intelligence core';if(core)video.pause();else if(!paused&&video.src)video.play().catch(()=>{});};
+ button.onclick=()=>{paused=!paused;updateMotion();};updateMotion();
+ root.querySelector('.enter-universe').onclick=()=>navigate('parallax');root.querySelectorAll('[data-destination]').forEach(b=>b.onclick=()=>navigate(b.dataset.destination));
+ root.addEventListener('pointermove',e=>{if(paused)return;sky.style.setProperty('--mx',((e.clientX/innerWidth-.5)*18)+'px');sky.style.setProperty('--my',((e.clientY/innerHeight-.5)*12)+'px');});
+ const canvas=root.querySelector('canvas'),ctx=canvas.getContext('2d');let w=0,h=0,t=0,last=0;let seed=19;const rand=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);const stars=Array.from({length:180},()=>({x:rand(),y:rand(),z:rand(),phase:rand()*6.28}));
+ function resize(){w=root.clientWidth;h=root.clientHeight;const d=Math.min(devicePixelRatio,1.5);canvas.width=w*d;canvas.height=h*d;ctx.setTransform(d,0,0,d,0,0);}new ResizeObserver(resize).observe(root);
+ function draw(now){requestAnimationFrame(draw);if(root.hidden||document.hidden||now-last<33)return;const dt=Math.min((now-last)/1000,.05);last=now;if(!paused)t+=dt;ctx.clearRect(0,0,w,h);for(const s of stars){ctx.fillStyle=`rgba(211,227,255,${.12+s.z*.4+Math.sin(t*.3+s.phase)*.08})`;ctx.beginPath();ctx.arc(((s.x+t*.0006*(s.z+.2))%1)*w,s.y*h,.4+s.z,0,7);ctx.fill();}}requestAnimationFrame(draw);
+ new IntersectionObserver(entries=>{if(!entries[0].isIntersecting)video.pause();else if(!paused&&video.src)video.play().catch(()=>{});}).observe(root);
+ return {setVideo(url){video.src=url;video.addEventListener('playing',()=>root.classList.add('video-ready'),{once:true});if(!paused&&!root.hidden)video.play().catch(()=>{});}};
+}
+
+
+function mountWorkflow(getMetrics){
+ const root=document.createElement('section');root.id='workflow';root.className='page workflow';root.innerHTML=`<div class="wf-art"><img src="assets/core.jpg" alt="Your black-hole reference: luminous accretion disk across deep space"></div><canvas aria-hidden="true"></canvas><header class="wf-header"><div>PARALLAX <small>YOUR PRIVATE WORKSPACE</small></div><div class="wf-controls"><select aria-label="Workspace scene"><option value="core">Black hole</option><option value="galaxy">Galaxy</option><option value="analysis">Analysis field</option><option value="vortex">Vortex</option><option value="network">Pattern network</option></select><button id="wf-motion">Pause motion</button><button id="wf-intro">Entrance ↗</button></div></header><nav class="wf-nav" aria-label="Workspace tools"><button data-pane="parallax">Data & patterns</button><button data-pane="calculations">Black Hole math</button><button data-pane="conversations">Agent chats</button><button data-pane="money">Paper results</button><button data-pane="evidence">Decision log</button><button data-pane="agents">Paper desk</button><button data-pane="connections">Connections</button><button data-pane="research">Research tools</button></nav><div class="wf-label"><span>INTELLIGENCE CORE</span><h1>Your universe.<br>Your perspective.</h1><p id="wf-activity">Agents idle · select one to open its conversation</p></div><div class="wf-agents" aria-label="Agent roles"></div><div class="wf-drawer" hidden><button class="wf-close" aria-label="Close workspace panel">Close ×</button><div class="wf-content"></div></div><footer class="wf-footer"><div id="wf-stats"></div><small>AMBIENT ORBITS · ACTIVITY LIGHTS FOLLOW CHAT REQUESTS</small></footer>`;
+ document.querySelector('main').append(root);const pane=root.querySelector('.wf-content'),drawer=root.querySelector('.wf-drawer'),art=root.querySelector('.wf-art'),canvas=root.querySelector('canvas'),c=canvas.getContext('2d');let paused=matchMedia('(prefers-reduced-motion: reduce)').matches,activeRole=null,w=0,h=0,t=0,last=0;
+ const names=['Scout','Filter','Analyst','Risk','Executor','Logger'];const agents=names.map((name,i)=>{const b=document.createElement('button');b.className='wf-agent';b.innerHTML='<i aria-hidden="true"></i><span>'+name+'</span><small>Idle</small>';b.onclick=()=>{navigate('conversations');window.dispatchEvent(new CustomEvent('edge-select-agent',{detail:name}));};root.querySelector('.wf-agents').append(b);return b;});
+ function navigate(id){if(id==='observatory'){document.body.classList.remove('workflow-mode');return false;}if(id!=='workflow'&&!document.getElementById(id))return false;document.body.classList.add('workflow-mode');document.querySelectorAll('.page').forEach(p=>p.hidden=true);root.hidden=false;drawer.hidden=id==='workflow';if(id!=='workflow'){const section=document.getElementById(id);pane.append(section);section.hidden=false;}root.querySelectorAll('[data-pane]').forEach(b=>b.classList.toggle('active',b.dataset.pane===id));const m=getMetrics();root.querySelector('#wf-stats').textContent=`Paper equity $${m.equity.toFixed(2)}   /   Realized paper P&L $${m.realized.toFixed(2)}`;return true;}
+ window.parallaxNavigate=navigate;root.querySelectorAll('[data-pane]').forEach(b=>b.onclick=()=>navigate(b.dataset.pane));root.querySelector('.wf-close').onclick=()=>navigate('workflow');root.querySelector('#wf-intro').onclick=()=>{document.body.classList.remove('workflow-mode');root.hidden=true;document.getElementById('observatory').hidden=false;};
+ const motion=root.querySelector('#wf-motion');function motionLabel(){motion.textContent=paused?'Resume motion':'Pause motion';motion.setAttribute('aria-pressed',String(paused));art.style.animationPlayState=paused?'paused':'running';}motion.onclick=()=>{paused=!paused;motionLabel();};motionLabel();
+ root.querySelector('select').onchange=e=>{art.querySelector('img').src='assets/'+e.target.value+'.jpg';art.querySelector('img').alt=e.target.selectedOptions[0].textContent+' reference artwork';};
+ window.addEventListener('edge-agent-state',e=>{activeRole=e.detail.state==='running'?e.detail.role:null;root.querySelector('#wf-activity').textContent=e.detail.role+' · '+e.detail.state;agents.forEach((b,i)=>{b.classList.toggle('working',names[i]===activeRole);b.querySelector('small').textContent=names[i]===activeRole?'Responding':'Idle';});});
+ root.addEventListener('pointermove',e=>{if(paused||!drawer.hidden)return;art.style.setProperty('--x',((e.clientX/innerWidth-.5)*12)+'px');art.style.setProperty('--y',((e.clientY/innerHeight-.5)*9)+'px');});
+ new ResizeObserver(()=>{w=root.clientWidth;h=root.clientHeight;const d=Math.min(devicePixelRatio,1.5);canvas.width=w*d;canvas.height=h*d;c.setTransform(d,0,0,d,0,0);}).observe(root);
+ function frame(now){requestAnimationFrame(frame);if(root.hidden||document.hidden||now-last<33)return;const dt=Math.min((now-last)/1000,.06);last=now;if(!paused)t+=dt;c.clearRect(0,0,w,h);const cx=w*.66,cy=h*.48,rx=Math.min(w*.28,430),ry=h*.22;
+ for(let k=0;k<55;k++){const a=k*2.399+t*.025,r=.45+(k%13)/16;c.beginPath();c.strokeStyle=`rgba(238,213,174,${.015+(k%4)*.008})`;c.ellipse(cx,cy,rx*r,ry*r,-.18,0,6.283);c.stroke();const u=a+t*.06;c.fillStyle='rgba(255,235,204,.38)';c.beginPath();c.arc(cx+Math.cos(u)*rx*r,cy+Math.sin(u)*ry*r,1,0,7);c.fill();}
+ agents.forEach((b,i)=>{const a=i*Math.PI/3+t*.018;const x=cx+Math.cos(a)*rx,y=cy+Math.sin(a)*ry;b.style.left=x+'px';b.style.top=y+'px';if(names[i]===activeRole){c.beginPath();c.strokeStyle='#edd4a0';c.setLineDash([3,10]);c.lineDashOffset=-t*20;c.moveTo(x,y);c.quadraticCurveTo(cx,y,cx,cy);c.stroke();c.setLineDash([]);}});
+ }requestAnimationFrame(frame);navigate('workflow');
+}
+
+
+const $=id=>document.getElementById(id);let state=createDesk();try{const saved=JSON.parse(localStorage.getItem('edge-paper-v1'));if(saved?.mode==='paper'&&Number.isFinite(saved.cash)&&saved.cash>=0&&Number.isFinite(saved.initial)&&['positions','closed','events','seen'].every(k=>Array.isArray(saved[k])))state=saved;}catch{}const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
+function page(id){if(window.parallaxNavigate?.(id))return;window.scrollTo({top:0,behavior:'instant'});document.querySelectorAll('.page').forEach(e=>e.hidden=e.id!==id);document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('active',e.dataset.page===id));$('breadcrumb').textContent='Workspace / '+id;}
+document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));
+function blade(title,data){$('blade-title').textContent=title;$('blade-content').textContent=JSON.stringify(data,null,2);$('blade').showModal();}$('close-blade').onclick=()=>$('blade').close();
+function el(tag,text,cls){const e=document.createElement(tag);e.textContent=text;if(cls)e.className=cls;return e;}
+function download(name,obj){const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));const a=el('a','Download');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+const cosmos=mountCosmos($('cosmos'),(role,events)=>blade(role+' / context',{role,status:events.length?'Recorded evidence':'Waiting for evidence',events}));
+function render(){cosmos.update(state.events);try{localStorage.setItem('edge-paper-v1',JSON.stringify(state));}catch{}const m=metrics(state);for(const id of ['overview-metrics','money-metrics']){$(id).replaceChildren();for(const [label,value] of [['Paper equity',m.equity],['Realized paper P&L',m.realized],['Unrealized paper P&L',m.unrealized],['Available paper cash',state.cash]]){const box=el('div','','metric');box.append(el('span',label),el('strong',money(value)));$(id).append(box);}}
+ $('roles').replaceChildren();for(const role of roles){const b=el('button',role,'role');const events=state.events.filter(e=>e.agent===role);b.append(el('small',events.length+' recorded events'));b.onclick=()=>blade(role,{role,mode:'paper',events});$('roles').append(b);}
+ for(const [id,items] of [['positions',state.positions],['closed',state.closed]]){$(id).replaceChildren();if(!items.length)$(id).append(el('p','No '+(id==='closed'?'closed':'open')+' paper positions.'));for(const p of items){const b=el('button',p.mint+' · '+(id==='closed'?money(p.pnl):money(p.quantity*p.mark)),'position');b.onclick=()=>blade('Position evidence',p);$(id).append(b);}}
+ $('events').replaceChildren();const query=$('search').value.toLowerCase();for(const e of [...state.events].reverse().filter(e=>JSON.stringify(e).toLowerCase().includes(query))){const b=el('button',e.agent+' / '+e.mint+' — '+e.reason,'event');b.append(el('small',' · '+new Date(e.at).toLocaleTimeString()));b.onclick=()=>blade('Decision evidence',e);$('events').append(b);}if(!state.events.length)$('events').append(el('p','No decisions yet. Import timestamped candidate evidence in Agent desk.'));}
+function action(fn){try{fn();render();$('status').textContent='Paper session updated';}catch(e){$('status').textContent=e.message;}}
+$('reset').onclick=()=>{if(state.events.length&&!confirm('Export first if needed. Starting a new paper session clears this browser session.'))return;action(()=>state=createDesk(Number($('bankroll').value)));};
+$('import').onchange=async()=>{try{const f=$('import').files[0];if(!f)return;if(f.size>2000000)throw Error('Maximum file size is 2 MB');const rows=JSON.parse(await f.text());if(!Array.isArray(rows)||rows.length>500)throw Error('Import an array of at most 500 candidates');let accepted=0;const cfg={stopPct:Number($('stop').value),trailPct:Number($('trail').value),costBps:Number($('cost').value)};for(const c of rows)if(processCandidate(state,c,cfg).accepted)accepted++;$('import-result').textContent=`${rows.length} evaluated · ${accepted} paper entries · ${rows.length-accepted} rejected`;render();}catch(e){$('import-result').textContent=e.message;}};
+$('quote').onclick=()=>action(()=>markPosition(state,$('quote-mint').value,Number($('quote-price').value),$('quote-time').value));$('search').oninput=render;$('export').onclick=()=>download('edge-paper-session.json',state);
+$('sample').onclick=()=>download('candidate-template.json',[{mint:'REPLACE_WITH_TOKEN_MINT',observedAt:new Date().toISOString(),mintRevoked:null,freezeRevoked:null,liquidityVerified:null,devRugLinked:null,bundledLaunch:null,top10Percent:null,volume1hUsd:null,score:null,scoreVersion:'REPLACE_WITH_MODEL_VERSION',price:null}]);
+const providers=[['Existing research API','Available through authenticated research workspace','../research/index.html'],['Optional AI · dormant','Prepared for later; no paid AI is needed for archive calculations','https://console.x.ai/'],['Helius Solana RPC','Backend credential configured; read-only network observations','https://dashboard.helius.dev/'],['Jupiter prices','Backend credential configured; read-only reference prices','https://portal.jup.ag/'],['Pump.fun / PumpSwap','Launch and migration decoder not connected','https://pump.fun/'],['Bonk.fun / Raydium','LaunchLab and pool decoders not connected','https://docs.raydium.io/'],['Meteora','Pool-specific evidence decoder not connected','https://docs.meteora.ag/']];for(const [name,status,url] of providers){const c=el('article','','role');c.append(el('h2',name),el('p',status));const a=el('a','Open provider ↗');a.href=url;a.target='_blank';a.rel='noopener noreferrer';c.append(a);$('providers').append(c);}page('overview');render();
+
+mountAgentChat($('agent-chat'),()=>state);
+
+for(const section of document.querySelectorAll('.page')){
+ const ambient=document.createElement('div');ambient.className='section-flow';ambient.setAttribute('aria-hidden','true');
+ for(let i=0;i<24;i++){const dot=document.createElement('i');dot.style.setProperty('--angle',(i*137.5)+'deg');dot.style.setProperty('--delay',(-i*.41)+'s');dot.style.setProperty('--radius',(80+i%6*22)+'px');ambient.append(dot);}
+ section.prepend(ambient);
+}
+
+const sounds=soundSystem();
+const galaxy=mountScene($('galaxy-scene'),{select(role){page('conversations');window.dispatchEvent(new CustomEvent('edge-select-agent',{detail:role}));}});
+const moneyScene=mountScene($('money-scene'),{mode:'money'});
+$('sound-toggle').onclick=async()=>{try{const on=await sounds.toggle();$('sound-toggle').textContent=on?'Sound on':'Sound off';if(on)sounds.play();}catch{$('status').textContent='Audio is unavailable in this browser.';}};
+window.addEventListener('edge-agent-state',e=>{galaxy.working(e.detail.state==='running'?e.detail.role:null);sounds.play(e.detail.state==='running'?'start':e.detail.state==='failed'?'error':'done');});
+let lastClosed=state.closed.length;const oldQuote=$('quote').onclick;$('quote').onclick=()=>{oldQuote();if(state.closed.length>lastClosed){const close=state.closed.at(-1);moneyScene.money(close.pnl);sounds.play(close.pnl<0?'error':'done');}lastClosed=state.closed.length;};
+
+mountParallax();mountCalculations(page);page('parallax');
+
+const observatory=mountImmersive(page);page('observatory');
+document.querySelector('.brand').onclick=e=>{e.preventDefault();page('observatory');};
+observatory.setVideo('https://d8j0ntlcm91z4.cloudfront.net/user_36nirQ0Q9RM6LsQk7YYAZf75ceZ/hf_20261030_013817_1f3f5ad4-93fb-4ece-9e50-f9fe7247444c.mp4');
+
+mountWorkflow(()=>metrics(state));
+
+</script></body></html>
+

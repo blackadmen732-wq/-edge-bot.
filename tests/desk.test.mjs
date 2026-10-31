@@ -1,0 +1,9 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {createDesk,processCandidate,markPosition,metrics} from '../dashboard/desk/engine.mjs';
+const now=Date.now(),cfg={stopPct:10,trailPct:5,costBps:100};
+const candidate=(mint='abc')=>({mint,observedAt:new Date(now).toISOString(),mintRevoked:true,freezeRevoked:true,liquidityVerified:true,devRugLinked:false,bundledLaunch:false,top10Percent:20,volume1hUsd:50000,score:.7,scoreVersion:'test',price:1});
+test('missing evidence is rejected and logged',()=>{const s=createDesk(),c=candidate();delete c.devRugLinked;assert.equal(processCandidate(s,c,cfg,now).accepted,false);assert.equal(s.positions.length,0);assert.equal(s.events.at(-1).agent,'Logger');});
+test('cash reserves prevent overspending',()=>{const s=createDesk();for(let i=0;i<30;i++)processCandidate(s,candidate('m'+i),cfg,now);assert.ok(s.cash>=-1e-8);assert.ok(metrics(s).equity<=1000);});
+test('duplicates cannot double fill',()=>{const s=createDesk();processCandidate(s,candidate(),cfg,now);assert.equal(processCandidate(s,candidate(),cfg,now).accepted,false);assert.equal(s.positions.length,1);});
+test('gaps settle at observed price and include both costs',()=>{const s=createDesk();processCandidate(s,candidate(),cfg,now);const r=markPosition(s,'abc',.5,new Date(now+1000).toISOString(),now+1000);assert.equal(r.pnl,-51.5);assert.equal(s.cash,948.5);});
+test('trailing stop activates after 15 percent and never decreases',()=>{const s=createDesk();processCandidate(s,candidate(),cfg,now);markPosition(s,'abc',1.2,new Date(now+1000).toISOString(),now+1000);assert.equal(s.positions[0].stop,1.14);markPosition(s,'abc',1.16,new Date(now+2000).toISOString(),now+2000);assert.equal(s.positions[0].stop,1.14);});
+test('stale data and undefined stop reject entry',()=>{assert.equal(processCandidate(createDesk(),candidate(),{},now).accepted,false);assert.equal(processCandidate(createDesk(),candidate(),cfg,now+61000).accepted,false);});

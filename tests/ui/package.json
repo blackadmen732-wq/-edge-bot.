@@ -1,0 +1,11 @@
+{
+  "name": "parallax-private-ui-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test parallax-ui.test.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}
