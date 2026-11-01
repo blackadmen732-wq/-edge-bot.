@@ -78,6 +78,7 @@ jobs:
         run: |
           supabase functions deploy edgebot --project-ref "$PROJECT_REF" --no-verify-jwt
           supabase functions deploy edge-research --project-ref "$PROJECT_REF" --no-verify-jwt
+          supabase functions deploy parallax-money --project-ref "$PROJECT_REF" --no-verify-jwt
       - name: Smoke test the public dashboard endpoint
         if: steps.gate.outputs.go == 'true'
         run: |

@@ -1,8 +1,8 @@
 # Edge Bot: how to work here (cheap mode)
 
-Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Two edge functions:
-`edgebot` (Kalshi football scan, weather market making, forex analysis) and `edge-research`
-(data collectors, datasets, patterns). GitHub `main` deploys itself after tests (`.github/workflows/ci-deploy.yml`).
+Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Three edge functions:
+`edgebot` (Kalshi football scan, weather market making, forex analysis), `edge-research`
+(data collectors, datasets, patterns) and `parallax-money` (read-only paper-money curve for the dashboard). GitHub `main` deploys itself after tests (`.github/workflows/ci-deploy.yml`).
 
 ## The path for any change
 
@@ -15,6 +15,7 @@ Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Two
    - `edge-research/*` → `tests/research.test.ts tests/connections.test.ts tests/extra-connections.test.ts tests/parallax-patterns.test.ts`
    - `dashboard/desk/*` → `tests/desk.test.mjs tests/black-hole-calculations.test.mjs`
    - `edgebot/index.ts` → core + mm + forex
+   - `parallax-money/*` → `tests/parallax-money.test.ts`
 4. **Ship.** Is it in the "needs a PR" list below?
    - **No** → one commit straight to `main`, push. CI tests it and deploys it. Done. Don't wait for CI.
    - **Yes** → one PR, say what it needs, stop. Don't watch it.
@@ -45,3 +46,6 @@ Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Two
 - Weather market making quotes at :18/:48 UTC, but steps aside during model-update windows (`NEWS_WINDOWS_UTC`).
 - Football finds nothing until `ODDS_API_KEY` exists. The replay test found no football edge (`backtest/README.md`).
 - Two DB test files need `npm ci --prefix tests/e2e/db` (PGlite). Some sandboxes block that package; CI runs them.
+- GitHub Actions hasn't started a single run (every run is `startup_failure`): the owner's GitHub account has an unpaid bill.
+  Until it's paid nothing deploys, so live code can lag `main`. Don't hand-deploy around it; tell the owner.
+- Football bets so far are all waiting orders that expired unfilled, exactly as the replay predicted.
