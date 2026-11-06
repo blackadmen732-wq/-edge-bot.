@@ -75,7 +75,9 @@ async function scan() {
   let filled = 0, accrued = 0;
   for (const o of open) {
     const prog = byTicker.get(o.ticker) ?? (o.program as Program);
-    const hours = Math.min((Date.now() - new Date(o.last_check).getTime()) / 3_600_000, 3);
+    // never accrue past the program's end
+    const until = Math.min(Date.now(), Date.parse(prog.end));
+    const hours = Math.max(0, Math.min((until - new Date(o.last_check).getTime()) / 3_600_000, 3));
     let book = books.get(o.ticker);
     try { book ??= parseBook(await kget(`/markets/${encodeURIComponent(o.ticker)}/orderbook`)); } catch { continue; }
     const plan = o.plan as Plan;
@@ -88,7 +90,9 @@ async function scan() {
       }
     } catch { /* no trade data this hour: assume no fill, check again next hour */ }
     if (hit) {
-      const pnl = fillPnl(hit, plan.q, hit === "yes" ? plan.yesPrice! : plan.noPrice!, yesMid(book));
+      // pessimistic: a filled bid is booked as a total loss of what we paid (marked-to-mid kept for reference)
+      const price = hit === "yes" ? plan.yesPrice! : plan.noPrice!;
+      const pnl = Math.min(-plan.q * price, fillPnl(hit, plan.q, price, yesMid(book)));
       await sql`update edgebot.lip_book set status = 'filled', filled_side = ${hit}, fill_pnl = ${pnl}, closed_at = now(), last_check = now() where id = ${o.id}`;
       filled++;
       continue;
