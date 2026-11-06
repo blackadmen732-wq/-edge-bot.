@@ -76,11 +76,11 @@ jobs:
         if: steps.gate.outputs.go == 'true'
         # Both functions check their own tokens, so Supabase's JWT check stays off (same as before).
         run: |
-          supabase functions deploy edgebot --project-ref "$PROJECT_REF" --no-verify-jwt
-          supabase functions deploy edge-research --project-ref "$PROJECT_REF" --no-verify-jwt
-          supabase functions deploy parallax-money --project-ref "$PROJECT_REF" --no-verify-jwt
-          supabase functions deploy stocks --project-ref "$PROJECT_REF" --no-verify-jwt
-          supabase functions deploy wx-score --project-ref "$PROJECT_REF" --no-verify-jwt
+          supabase functions deploy edgebot --project-ref "$PROJECT_REF" --no-verify-jwt --yes
+          supabase functions deploy edge-research --project-ref "$PROJECT_REF" --no-verify-jwt --yes
+          supabase functions deploy parallax-money --project-ref "$PROJECT_REF" --no-verify-jwt --yes
+          supabase functions deploy stocks --project-ref "$PROJECT_REF" --no-verify-jwt --yes
+          supabase functions deploy wx-score --project-ref "$PROJECT_REF" --no-verify-jwt --yes
       - name: Smoke test the public dashboard endpoint
         if: steps.gate.outputs.go == 'true'
         run: |
