@@ -16,6 +16,10 @@ export interface Genome {
   cities: string[];     // which cities it trades
   useBias: boolean;     // correct the forecast with each city's learned bias
   sigmaMult: number;    // widen / narrow the learned spread
+  /** "forecast": trade only where the learned forecast disagrees with the price by minEdge.
+   *  "price": ignore the forecast; take `side` on every market priced inside the band (tests "cheap favorites").
+   *  Older recipes without it are "forecast". */
+  mode?: "forecast" | "price";
 }
 
 export interface Recipe { id: string; genome: Genome; generation: number; parent: string | null; status: "alive" | "dead" | "proven" }
@@ -46,6 +50,7 @@ export function randomGenome(r: () => number): Genome {
     cities: cities.length ? cities : [CITIES[Math.floor(r() * CITIES.length)]],
     useBias: r() < 0.7,
     sigmaMult: r3(0.7 + r() * 0.8),
+    mode: r() < 0.4 ? "price" : "forecast",
   };
 }
 
@@ -54,7 +59,7 @@ export function mutate(g: Genome, r: () => number): Genome {
   const c: Genome = { ...g, cities: [...g.cities] };
   const n = 1 + (r() < 0.4 ? 1 : 0);
   for (let i = 0; i < n; i++) {
-    switch (Math.floor(r() * 6)) {
+    switch (Math.floor(r() * 7)) {
       case 0: c.minEdge = r3(clamp(c.minEdge + (r() - 0.5) * 0.06, 0.02, 0.3)); break;
       case 1: c.priceLo = r3(clamp(c.priceLo + (r() - 0.5) * 0.1, 0.02, c.priceHi - 0.05)); break;
       case 2: c.priceHi = r3(clamp(c.priceHi + (r() - 0.5) * 0.1, c.priceLo + 0.05, 0.98)); break;
@@ -64,6 +69,7 @@ export function mutate(g: Genome, r: () => number): Genome {
         c.cities = c.cities.includes(city) ? (c.cities.length > 1 ? c.cities.filter((x) => x !== city) : c.cities) : [...c.cities, city];
         break;
       }
+      case 5: c.mode = c.mode === "price" ? "forecast" : "price"; break;
       default: c.useBias = r() < 0.5 ? !c.useBias : c.useBias; c.sigmaMult = r3(clamp(c.sigmaMult + (r() - 0.5) * 0.2, 0.5, 2));
     }
   }
@@ -89,19 +95,29 @@ export function fitCities(rows: CalRow[]): Map<string, CityModel> {
 /** What a recipe would have made per $1 contract on these rows: buy at market + halfSpread, pay Kalshi's taker fee. */
 export function evaluate(g: Genome, rows: CalRow[], models: Map<string, CityModel>, halfSpread = 0.01): Score {
   const pnl: number[] = [];
+  const byDay = new Map<string, number>();
+  const book = (date: string, x: number) => { pnl.push(x); byDay.set(date, (byDay.get(date) ?? 0) + x); };
   for (const r of rows) {
-    if (!g.cities.includes(r.series) || r.market < g.priceLo || r.market > g.priceHi || !Number.isFinite(r.fcMean)) continue;
-    const m = models.get(r.series);
-    if (!m) continue;
-    const p = bracketProb({ min: r.bmin, max: r.bmax }, r.fcMean + (g.useBias ? m.bias : 0), m.sigma * g.sigmaMult);
+    if (!g.cities.includes(r.series) || r.market < g.priceLo || r.market > g.priceHi) continue;
     const ask = r.market + halfSpread, bid = r.market - halfSpread;
-    if (g.side !== "no" && ask < 0.99 && p - ask >= g.minEdge) pnl.push(r.y - ask - takerFee(ask));
-    else if (g.side !== "yes" && bid > 0.01 && bid - p >= g.minEdge) pnl.push((1 - r.y) - (1 - bid) - takerFee(1 - bid));
+    if (g.mode === "price") {
+      if (g.side === "no") { if (bid > 0.01) book(r.date, (1 - r.y) - (1 - bid) - takerFee(1 - bid)); }
+      else if (ask < 0.99) book(r.date, r.y - ask - takerFee(ask));
+      continue;
+    }
+    const m = models.get(r.series);
+    if (!m || !Number.isFinite(r.fcMean)) continue;
+    const p = bracketProb({ min: r.bmin, max: r.bmax }, r.fcMean + (g.useBias ? m.bias : 0), m.sigma * g.sigmaMult);
+    if (g.side !== "no" && ask < 0.99 && p - ask >= g.minEdge) book(r.date, r.y - ask - takerFee(ask));
+    else if (g.side !== "yes" && bid > 0.01 && bid - p >= g.minEdge) book(r.date, (1 - r.y) - (1 - bid) - takerFee(1 - bid));
   }
   const n = pnl.length;
   const mean = n ? pnl.reduce((a, b) => a + b, 0) / n : 0;
-  const sd = n > 1 ? Math.sqrt(pnl.reduce((a, x) => a + (x - mean) ** 2, 0) / (n - 1)) : 0;
-  return { trades: n, mean: r3(mean), z: n > 1 && sd > 0 ? r3(mean / (sd / Math.sqrt(n))) : 0, total: r3(pnl.reduce((a, b) => a + b, 0)) };
+  // z from DAILY totals: trades on the same day share the same weather, so they are not independent
+  const days = [...byDay.values()], d = days.length;
+  const dMean = d ? days.reduce((a, b) => a + b, 0) / d : 0;
+  const dSd = d > 1 ? Math.sqrt(days.reduce((a, x) => a + (x - dMean) ** 2, 0) / (d - 1)) : 0;
+  return { trades: n, mean: r3(mean), z: d > 1 && dSd > 0 ? r3(dMean / (dSd / Math.sqrt(d))) : 0, total: r3(pnl.reduce((a, b) => a + b, 0)) };
 }
 
 /** z a winner must clear when `tried` recipes competed (one-sided 5%, Bonferroni). */

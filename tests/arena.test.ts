@@ -81,3 +81,26 @@ test("evolution finds a real edge and proves it on the vault; pure noise never g
     assert.equal(proven > 0, expectProven, `edge=${edge} proven=${proven}`);
   }
 });
+
+test("price-only recipes: buying underpriced favorites makes money; fairly priced ones don't", () => {
+  // 60 days x 6 cities: a 0.55-0.65 market that comes true `rate` of the time, plus a 5c long shot that never does
+  const make = (rate: number): CalRow[] => {
+    const r = rng(9), rows: CalRow[] = [];
+    for (let d = 0; d < 60; d++) {
+      const date = new Date(Date.UTC(2026, 8, 1 + d)).toISOString().slice(0, 10);
+      for (const series of ["KXHIGHNY", "KXHIGHCHI", "KXHIGHMIA", "KXHIGHAUS", "KXHIGHLAX", "KXHIGHDEN"]) {
+        rows.push({ series, date, bmin: 70, bmax: 71, market: 0.55 + r() * 0.1, fcMean: 70, actual: 70, y: (r() < rate ? 1 : 0) as 0 | 1 });
+        rows.push({ series, date, bmin: 90, bmax: null, market: 0.05, fcMean: 70, actual: 70, y: 0 });
+      }
+    }
+    return rows;
+  };
+  const fav = { minEdge: 0.1, priceLo: 0.5, priceHi: 0.7, side: "yes" as const, cities: ["KXHIGHNY", "KXHIGHCHI", "KXHIGHMIA", "KXHIGHAUS", "KXHIGHLAX", "KXHIGHDEN"], useBias: false, sigmaMult: 1, mode: "price" as const };
+  const cheap = evaluate(fav, make(0.75), new Map());
+  assert.equal(cheap.trades, 360); // every favorite, no forecast needed
+  assert.ok(cheap.mean > 0.05 && cheap.z > 3, JSON.stringify(cheap));
+  const fair = evaluate(fav, make(0.6), new Map());
+  assert.ok(fair.mean < 0.01, JSON.stringify(fair)); // fair price minus spread and fee loses
+  const noLongShots = evaluate({ ...fav, priceLo: 0.02, priceHi: 0.1, side: "no" }, make(0.6), new Map());
+  assert.ok(noLongShots.trades === 360 && noLongShots.mean > 0);
+});
