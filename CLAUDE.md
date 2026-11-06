@@ -1,8 +1,8 @@
 # Edge Bot: how to work here (cheap mode)
 
-Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Three edge functions:
+Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Four edge functions:
 `edgebot` (Kalshi football scan, weather market making, forex analysis), `edge-research`
-(data collectors, datasets, patterns) and `parallax-money` (read-only paper-money curve for the dashboard). GitHub `main` deploys itself after tests (`.github/workflows/ci-deploy.yml`).
+(data collectors, datasets, patterns) and `parallax-money` (read-only paper-money curve for the dashboard) and `stocks` (opening-range breakout day trades through Alpaca, paper by default). GitHub `main` deploys itself after tests (`.github/workflows/ci-deploy.yml`).
 
 ## The path for any change
 
@@ -16,13 +16,14 @@ Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Thr
    - `dashboard/desk/*` → `tests/desk.test.mjs tests/black-hole-calculations.test.mjs`
    - `edgebot/index.ts` → core + mm + forex
    - `parallax-money/*` → `tests/parallax-money.test.ts`
+   - `stocks/*` → `tests/stocks.test.ts`
 4. **Ship.** Is it in the "needs a PR" list below?
    - **No** → one commit straight to `main`, push. CI tests it and deploys it. Done. Don't wait for CI.
    - **Yes** → one PR, say what it needs, stop. Don't watch it.
 5. **Tell the owner in 1–3 lines.** Blunt and casual. No recap of steps.
 
 **Needs a PR (everything else goes straight to main):**
-- Anything touching real money: `KalshiTrader`, `liveGate`, `placeBet`'s live branch, `HARD` in `lib/rules.ts`, `MM_HARD` in `lib/mm.ts`.
+- Anything touching real money: `KalshiTrader`, `liveGate`, `placeBet`'s live branch, `HARD` in `lib/rules.ts`, `MM_HARD` in `lib/mm.ts`, anything in `supabase/functions/stocks/` (`STOCK_HARD`, `Alpaca`, the live gate).
 - New file in `supabase/migrations/`.
 - Changes across more than ~5 files.
 
@@ -38,7 +39,8 @@ Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Thr
 
 - Deploy by hand, or from a branch. Push to `main`; the workflow deploys.
 - Edit a migration that has already been applied. Add a new one, and apply it once via the Supabase SQL tool.
-- Loosen a hard cap, add a real-money path to market making or forex, or turn on live trading.
+- Loosen a hard cap, add a real-money path to market making or forex, or turn on live trading yourself.
+  The owner approved one real-money path (Nov 6): `stocks`, behind `STOCK_HARD` and its live gate. Only the owner flips it live.
 - Put a secret in code, a commit, a comment or chat. Keys go into Supabase secrets, typed by the owner.
 
 ## Facts worth not re-discovering
@@ -48,4 +50,5 @@ Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Thr
 - Two DB test files need `npm ci --prefix tests/e2e/db` (PGlite). Some sandboxes block that package; CI runs them.
 - GitHub Actions hasn't started a single run (every run is `startup_failure`): the owner's GitHub account has an unpaid bill.
   Until it's paid nothing deploys, so live code can lag `main`. Don't hand-deploy around it; tell the owner.
+- `.claude/skills/trader-*` is the MIT day-trader-skill pack (Jake Schincariol), copied as-is for chat use. The `stocks` function is our own code, not those scripts.
 - Football bets so far are all waiting orders that expired unfilled, exactly as the replay predicted.
