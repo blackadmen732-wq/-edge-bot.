@@ -81,6 +81,7 @@ jobs:
           supabase functions deploy parallax-money --project-ref "$PROJECT_REF" --no-verify-jwt --yes
           supabase functions deploy stocks --project-ref "$PROJECT_REF" --no-verify-jwt --yes
           supabase functions deploy wx-score --project-ref "$PROJECT_REF" --no-verify-jwt --yes
+          supabase functions deploy lip --project-ref "$PROJECT_REF" --no-verify-jwt --yes
       - name: Smoke test the public dashboard endpoint
         if: steps.gate.outputs.go == 'true'
         run: |
