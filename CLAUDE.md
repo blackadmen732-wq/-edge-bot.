@@ -1,8 +1,8 @@
 # Edge Bot: how to work here (cheap mode)
 
-Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Five edge functions:
+Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Six edge functions:
 `edgebot` (Kalshi football scan, weather market making, forex analysis), `edge-research`
-(data collectors, datasets, patterns) and `parallax-money` (read-only paper-money curve for the dashboard) and `stocks` (opening-range breakout day trades through Alpaca, paper by default) and `wx-score` (weather scoreboard: Kalshi price vs ensemble forecast vs outcome; places no orders). GitHub `main` deploys itself after tests (`.github/workflows/ci-deploy.yml`).
+(data collectors, datasets, patterns) and `parallax-money` (read-only paper-money curve for the dashboard) and `stocks` (opening-range breakout day trades through Alpaca, paper by default) and `wx-score` (weather scoreboard: Kalshi price vs ensemble forecast vs outcome; places no orders) and `lip` (Kalshi liquidity-reward scanner + paper book; no keys, no orders). GitHub `main` deploys itself after tests (`.github/workflows/ci-deploy.yml`).
 
 ## The path for any change
 
@@ -18,6 +18,7 @@ Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Fiv
    - `parallax-money/*` → `tests/parallax-money.test.ts`
    - `stocks/*` → `tests/stocks.test.ts`
    - `wx-score/*` → `tests/wx-score.test.ts tests/arena.test.ts`
+   - `lip/*` → `tests/lip.test.ts`
 4. **Ship.** Is it in the "needs a PR" list below?
    - **No** → one commit straight to `main`, push. CI tests it and deploys it. Done. Don't wait for CI.
    - **Yes** → one PR, say what it needs, stop. Don't watch it.
@@ -53,4 +54,6 @@ Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Fiv
 - Weather (Nov 6): Kalshi's price beat our single-number forecast (Brier 0.166 vs 0.246 on 102 markets); long-shot selling lost $165.
   So `mm_tail_max_prob` and `mm_forecast_weight` are 0. Money follows a forecast only after `wx-score?task=board` says EARNED.
 - `.claude/skills/trader-*` is the MIT day-trader-skill pack (Jake Schincariol), copied as-is for chat use. The `stocks` function is our own code, not those scripts.
+- Nov 6: free-forecast weather has no edge (market Brier 0.096 vs learned 0.127 out of sample); already-decided brackets are priced at 0-1c within the hour.
+  An empty side in a rewarded market is usually empty because a 1c bid would cross 99c bids on the other side (`lip/score.ts` handles it).
 - Football bets so far are all waiting orders that expired unfilled, exactly as the replay predicted.
