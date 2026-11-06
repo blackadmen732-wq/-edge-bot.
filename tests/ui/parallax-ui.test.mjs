@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
 import {mountParallax} from '../../dashboard/desk/parallax.mjs';
-function setup(fetcher){const dom=new JSDOM('<section id="parallax"></section>',{url:'https://local.test/'});globalThis.document=dom.window.document;globalThis.fetch=fetcher;mountParallax();const $=id=>document.getElementById(id);$('px-token').value='private-test-token';return {dom,$};}
+function setup(fetcher){const dom=new JSDOM('<section id="parallax"></section>',{url:'https://local.test/'});globalThis.document=dom.window.document;globalThis.CustomEvent=dom.window.CustomEvent;globalThis.fetch=fetcher;mountParallax();const $=id=>document.getElementById(id);$('px-token').value='private-test-token';return {dom,$};}
 const graph={records:[{id:'source:kraken.spot',kind:'source',name:'Kraken',market:'crypto',status:'receiving',updatedAt:'2026-01-01T00:00:00Z'}]};
 const series={series:[{id:'kraken:BTC-USD',name:'BTC/USD',source:'kraken.spot',samples:40,minimumSamples:30,ready:true},{id:'jupiter:SOL-USD',name:'SOL/USD',source:'jupiter.prices',samples:1,minimumSamples:30,ready:false}]};
 test('private panel loads real source metadata, saves an analysis and clears credentials on disconnect',async()=>{
