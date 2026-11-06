@@ -17,7 +17,7 @@ Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Fiv
    - `edgebot/index.ts` → core + mm + forex
    - `parallax-money/*` → `tests/parallax-money.test.ts`
    - `stocks/*` → `tests/stocks.test.ts`
-   - `wx-score/*` → `tests/wx-score.test.ts`
+   - `wx-score/*` → `tests/wx-score.test.ts tests/arena.test.ts`
 4. **Ship.** Is it in the "needs a PR" list below?
    - **No** → one commit straight to `main`, push. CI tests it and deploys it. Done. Don't wait for CI.
    - **Yes** → one PR, say what it needs, stop. Don't watch it.

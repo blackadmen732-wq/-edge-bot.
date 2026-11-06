@@ -6,6 +6,7 @@
 import postgres from "npm:postgres@3.4.5";
 import { getMarket, getOpenEvents } from "../edgebot/lib/kalshi.ts";
 import { bracketProb, daysBetween, eventDate, forecastSigma, localDateHour, marketMid, MM_CITIES, parseBracket } from "../edgebot/lib/mm.ts";
+import { night, type Recipe } from "./arena.ts";
 import { dailyMaxByKey, ensembleProb, learnAndTest, localNoonUtc, memberHighs, prevDay, scoreboard, type CalRow, type Scored } from "./score.ts";
 
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 1, idle_timeout: 20 });
@@ -68,7 +69,8 @@ async function settle() {
       const m = await getMarket(ticker);
       const r = String(m.result ?? "").toLowerCase();
       if (r !== "yes" && r !== "no") continue;
-      await sql`update edgebot.wx_scores set outcome = ${r === "yes" ? 1 : 0} where ticker = ${ticker} and outcome is null`;
+      const actual = Number(m.expiration_value);
+      await sql`update edgebot.wx_scores set outcome = ${r === "yes" ? 1 : 0}, actual_high = ${Number.isFinite(actual) ? actual : null} where ticker = ${ticker} and outcome is null`;
       n++;
     } catch { /* try again next hour */ }
   }
@@ -180,6 +182,55 @@ async function backfill() {
   return { step: "prices", priced, left };
 }
 
+
+// ---------------------------------------------------------------- Survival Arena (nightly)
+
+/** One row per settled market: the day-before snapshot (history or live ensemble) with forecast and actual. */
+async function arenaRows(): Promise<CalRow[]> {
+  const rows = await sql`select distinct on (ticker) series, event_date::text as date, bmin, bmax, market_mid::float8 as market,
+                                fc_mean::float8 as fc, actual_high::float8 as actual, outcome as y
+                         from edgebot.wx_scores
+                         where outcome is not null and fc_mean is not null and event_date is not null and fc_src in ('hist_det', 'ens')
+                         order by ticker, (days_ahead = 1) desc nulls last, snap_hour`;
+  return rows.map((r: any) => ({ series: r.series, date: r.date, bmin: r.bmin, bmax: r.bmax, market: r.market, fcMean: r.fc, actual: r.actual, y: r.y }));
+}
+
+async function arena() {
+  const rows = await arenaRows();
+  const days = new Set(rows.map((r) => r.date)).size;
+  if (days < 30) return { waiting: `arena needs 30+ settled days, has ${days}` };
+  const [st] = await sql`select value from edgebot.state where key = 'arena:wx'`;
+  const gen = Number(st?.value?.generation ?? 0) + 1, tried = Number(st?.value?.tried ?? 0);
+  const pop: Recipe[] = (await sql`select id, genome, generation, parent, status from edgebot.arena_recipes where family = 'wx' and status <> 'dead'`)
+    .map((r: any) => ({ id: r.id, genome: r.genome, generation: r.generation, parent: r.parent, status: r.status }));
+  let k = 0;
+  const res = night(pop, rows, { seed: gen * 7919 + days, generation: gen, tried, newId: () => `wx-g${gen}-${++k}` });
+  for (const p of res.population) {
+    const sc = res.scores[p.id];
+    await sql`insert into edgebot.arena_recipes (id, family, genome, generation, parent, status, last_select, last_vault, died_at, proven_at, updated_at)
+              values (${p.id}, 'wx', ${sql.json(p.genome as any)}, ${p.generation}, ${p.parent}, ${p.status}, ${sc ? sql.json(sc.select as any) : null},
+                      ${sc?.vault ? sql.json(sc.vault as any) : null}, ${p.status === "dead" ? new Date() : null}, ${p.status === "proven" ? new Date() : null}, now())
+              on conflict (id) do update set status = excluded.status, last_select = coalesce(excluded.last_select, arena_recipes.last_select),
+                last_vault = coalesce(excluded.last_vault, arena_recipes.last_vault),
+                died_at = coalesce(arena_recipes.died_at, excluded.died_at), proven_at = coalesce(arena_recipes.proven_at, excluded.proven_at), updated_at = now()`;
+  }
+  // every recipe ever scored counts toward the luck bar
+  const [{ n: everTried }] = await sql`select count(*)::int as n from edgebot.arena_recipes where family = 'wx'`;
+  const summary = { generation: gen, tried: everTried, days, rows: rows.length, killed: res.killed.length, born: res.born.length, proven: res.proven, required_z: res.requiredZ };
+  await sql`insert into edgebot.state (key, value) values ('arena:wx', ${sql.json(summary as any)})
+            on conflict (key) do update set value = excluded.value, updated_at = now()`;
+  return summary;
+}
+
+async function arenaBoard() {
+  const [st] = await sql`select value from edgebot.state where key = 'arena:wx'`;
+  const top = await sql`select id, generation, status, genome, last_select, last_vault from edgebot.arena_recipes
+                        where family = 'wx' and status <> 'dead' order by (last_select->>'z')::float8 desc nulls last limit 5`;
+  const [c] = await sql`select count(*) filter (where status = 'alive')::int as alive, count(*) filter (where status = 'dead')::int as dead,
+                               count(*) filter (where status = 'proven')::int as proven from edgebot.arena_recipes where family = 'wx'`;
+  return { last_night: st?.value ?? null, counts: c, top };
+}
+
 async function board() {
   // one snapshot per market: the day-before one when we have it (a real, tradable lead time), else the earliest
   const rows = await sql`select distinct on (ticker) ticker, market_mid::float8 as market, ens_p::float8 as ens, outcome as y, days_ahead
@@ -194,7 +245,7 @@ async function board() {
   const dates = [...new Set(cal.map((r) => r.date))].sort();
   const learned = dates.length >= 20 ? learnAndTest(cal, dates[Math.floor(dates.length * 0.6)]) : { waiting: `history backfill: ${dates.length} days so far` };
   const [bf] = await sql`select count(*) filter (where done)::int as done, count(*)::int as total from edgebot.wx_hist`;
-  return { ...scoreboard(scored), learned_forecast: learned, backfill: bf, recorded: p };
+  return { ...scoreboard(scored), learned_forecast: learned, arena: await arenaBoard().catch(() => null), backfill: bf, recorded: p };
 }
 
 Deno.serve(async (req) => {
@@ -206,6 +257,11 @@ Deno.serve(async (req) => {
       const cron = await vault("edgebot_cron_secret"), ctl = await vault("edgebot_control_token");
       if (!((cron && req.headers.get("x-edgebot-cron") === cron) || (ctl && req.headers.get("x-edgebot-token") === ctl))) return json({ error: "unauthorized" }, 401);
       return json({ ok: true, ...(await snap()) });
+    }
+    if (task === "arena") {
+      const cron = await vault("edgebot_cron_secret"), ctl = await vault("edgebot_control_token");
+      if (!((cron && req.headers.get("x-edgebot-cron") === cron) || (ctl && req.headers.get("x-edgebot-token") === ctl))) return json({ error: "unauthorized" }, 401);
+      return json({ ok: true, ...(await arena()) });
     }
     if (task === "backfill") {
       const cron = await vault("edgebot_cron_secret"), ctl = await vault("edgebot_control_token");
