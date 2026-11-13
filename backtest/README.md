@@ -77,3 +77,11 @@ The data steps need these files in the working folder first:
 | Only stocks that gapped up | 1,200 | 47% | −0.070R | −2.6 | −0.176R | +0.011R |
 
 At the current settings ($1,000 max position, $25 max risk) the bot's rule loses about $0.37 per trade: −$902 over these 60 days. Raising the daily trade limit would only lose faster. The paper record can't pass the live gate while this holds.
+
+## Ugly stocks, insider buying, bootcamp (November 13, 2026)
+
+**Nothing proven. Everything below passed its alarm checks first.**
+
+- **Stock arena** (`stock_arena.py`, 480 random US stocks, 5 years, 25,000 rules): every classic chart rule lost on small ignored stocks against the average such stock after 0.6% costs (e.g. buying 10% dips: −1.05% per trade, z −6.5). Best candidate, popular-stock momentum, missed the luck bar.
+- **Insider buying** (`insider_test.py`, 74,068 SEC open-market purchases): officer buys of $25k+ in small stocks, held 20 days, looked good on 900 random stocks (+1.97% per trade, z 3.2; newest data +2.15%, z 1.5). The rule, fixed in advance, then failed on 2,337 stocks it had never seen: +0.85% per trade but weekly z 0.1 (a few big winners, no steady edge). **Dead.**
+- **Bootcamp** (`bootcamp.py`): 8 levels with a rising bar, crowd bar, graveyard, copy-only-if-better, locked exam. Alarm: pure noise → 0 graduates; planted dip-buying pattern → found. Real data (852 stocks, 9,000 bots): 0 graduates; best reached level 5 of 8.
