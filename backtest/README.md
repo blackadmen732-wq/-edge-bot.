@@ -61,3 +61,19 @@ The data steps need these files in the working folder first:
 - **Hourly prices only.** Price gaps that open and close within an hour aren't seen. If an edge exists, it's in the minutes after the sharp books move. Testing that needs minute-level sportsbook odds (The Odds API's paid historical data).
 - **American football uses closing odds.** The bot bets an hour before kickoff, so those results get an hour of hindsight and flatter the bot.
 - **Soccer pre-match odds are about 5 hours old at bet time.** Even so, the gap was smallest when the odds were fresh. It doesn't flatter the bot.
+
+## Stocks: opening-range breakout replay (November 13, 2026)
+
+**No edge found, and the loss is not noise.**
+
+`stocks_fetch5m.py` downloads 60 days of 5-minute bars for 104 liquid US stocks and ETFs. `stocks_orb_replay.py` replays the `stocks` function's exact rule (`supabase/functions/stocks/orb.ts`) with no daily trade limit and 0.02% slippage on entries and stop exits.
+
+| Rule (Aug 21 to Nov 13, 2026) | Trades | Wins | Avg per trade | t | 1st half | 2nd half |
+|---|---|---|---|---|---|---|
+| Bot as it is (15-min range, stop at middle, 1R target) | 2,408 | 47% | −0.071R | −3.7 | −0.129R | −0.023R |
+| 2R target | 2,408 | 40% | −0.073R | −3.1 | −0.159R | −0.002R |
+| Stop at range low | 2,436 | 47% | −0.034R | −2.2 | −0.079R | +0.003R |
+| 30-min range | 1,848 | 47% | −0.047R | −2.3 | −0.144R | +0.031R |
+| Only stocks that gapped up | 1,200 | 47% | −0.070R | −2.6 | −0.176R | +0.011R |
+
+At the current settings ($1,000 max position, $25 max risk) the bot's rule loses about $0.37 per trade: −$902 over these 60 days. Raising the daily trade limit would only lose faster. The paper record can't pass the live gate while this holds.
