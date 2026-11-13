@@ -44,6 +44,9 @@ Paper-trading research bot on Supabase (project ref `mhahkbssltukjhusjsjf`). Six
 - Loosen a hard cap, add a real-money path to market making or forex, or turn on live trading yourself.
   The owner approved one real-money path (Nov 6): `stocks`, behind `STOCK_HARD` and its live gate. Only the owner flips it live.
 - Put a secret in code, a commit, a comment or chat. Keys go into Supabase secrets, typed by the owner.
+- Drop the luck filter (owner's rule, Nov 13). Research replays run with no trade or size limits, but a rule only counts if it
+  clears a bar that rises with every rule tried AND wins on newest data that selection never saw (`requiredZ` + vault in
+  `wx-score/arena.ts`, `backtest/stock_arena.py`). Testing many rules always finds lucky ones; without this, backtests lie.
 
 ## Facts worth not re-discovering
 
